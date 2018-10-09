@@ -89,6 +89,24 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 		log.Printf("Now run \"go run main.go -l %d -d %s\" on a different terminal\n", listenPort+1, fullAddr)
 	}
 
+	//START: writing to shell scripts
+	file, err := os.Create("result.sh")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	defer file.Close()
+
+	if secio {
+		fmt.Fprintf(file, "#!/bin/sh\n")
+		//fmt.Fprintf(file, "xterm -e bash -c 'go run main.go -l %d -d %s -secio'", listenPort+1, fullAddr)
+		fmt.Fprintf(file, "go run main.go -l %d -d %s -secio", listenPort+1, fullAddr)
+	} else {
+		fmt.Fprintf(file, "#!/bin/sh\n")
+		//fmt.Fprintf(file, "xterm -e bash -c 'go run main.go -l %d -d %s'", listenPort+1, fullAddr)
+		fmt.Fprintf(file, "go run main.go -l %d -d %s", listenPort+1, fullAddr)
+	}
+	//END: writing to shell scripts
+
 	return basicHost, nil
 }
 
@@ -198,9 +216,11 @@ func writeData(rw *bufio.ReadWriter) {
 }
 
 func main() {
-	t := time.Now()
+
 	genesisBlock := Block{}
-	genesisBlock = Block{0, t.String(), 0, calculateHash(genesisBlock), ""}
+
+	t := time.Now()
+	genesisBlock = Block{0, time.Unix(0, t.UnixNano()).String(), 0, calculateHash(genesisBlock), ""}
 
 	Blockchain = append(Blockchain, genesisBlock)
 
@@ -315,10 +335,11 @@ func generateBlock(oldBlock Block, BPM int) Block {
 
 	var newBlock Block
 
-	t := time.Now()
-
 	newBlock.Index = oldBlock.Index + 1
-	newBlock.Timestamp = t.String()
+
+	t := time.Now()
+	newBlock.Timestamp = time.Unix(0, t.UnixNano()).String()
+
 	newBlock.BPM = BPM
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Hash = calculateHash(newBlock)

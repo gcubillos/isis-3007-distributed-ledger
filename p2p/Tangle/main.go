@@ -29,9 +29,10 @@ import (
 )
 
 type Transaction struct {
-	Index int
-	Data  int
-	Time  int
+	Index      int
+	Data       int
+	TimeInt    int64
+	TimeString string
 }
 
 type Link struct {
@@ -50,7 +51,7 @@ var Tangle struct {
 	Links        []Link
 	lambda       float32
 	alpha        float32
-	h            int
+	h            int64
 }
 
 var mutex = &sync.Mutex{}
@@ -100,6 +101,24 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 		log.Printf("Now run \"go run main.go -l %d -d %s\" on a different terminal\n", listenPort+1, fullAddr)
 	}
 
+	//START: writing to shell scripts
+	file, err := os.Create("result.sh")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	defer file.Close()
+
+	if secio {
+		fmt.Fprintf(file, "#!/bin/sh\n")
+		//fmt.Fprintf(file, "xterm -e bash -c 'go run main.go -l %d -d %s -secio'", listenPort+1, fullAddr)
+		fmt.Fprintf(file, "go run main.go -l %d -d %s -secio", listenPort+1, fullAddr)
+	} else {
+		fmt.Fprintf(file, "#!/bin/sh\n")
+		//fmt.Fprintf(file, "xterm -e bash -c 'go run main.go -l %d -d %s'", listenPort+1, fullAddr)
+		fmt.Fprintf(file, "go run main.go -l %d -d %s", listenPort+1, fullAddr)
+	}
+	//END: writing to shell scripts
+
 	return basicHost, nil
 }
 
@@ -139,9 +158,11 @@ func readData(rw *bufio.ReadWriter) {
 			}
 
 			mutex.Lock()
-			if len(t1.Transactions) > len(Tangle.Transactions) && len(t1.Links) > len(Tangle.Links) {
+			if len(t1.Transactions) > len(Tangle.Transactions) &&
+				len(t1.Links) > len(Tangle.Links) {
 				Tangle.Transactions = t1.Transactions
 				Tangle.Links = t1.Links
+
 				bytes, err := json.MarshalIndent(Tangle, "", "  ")
 				if err != nil {
 
@@ -311,34 +332,30 @@ func generateTangle() {
 	Tangle.alpha = 0.5
 	Tangle.h = 1
 
-	genesisTransaction0 := Transaction{0, 0, 0}
-	// genesisTransaction1 := Transaction{1, 100, 1}
-	// genesisTransaction2 := Transaction{2, 200, 1}
-	// genesisTransaction3 := Transaction{3, 300, 1}
+	now := time.Now()
+	genesisTransaction0 := Transaction{0, 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String()}
 	genesisLink00 := generateLink(genesisTransaction0, genesisTransaction0)
-	// genesisLink01 := generateLink(genesisTransaction0, genesisTransaction1)
-	// genesisLink02 := generateLink(genesisTransaction0, genesisTransaction2)
-	// genesisLink03 := generateLink(genesisTransaction0, genesisTransaction3)
 
 	mutex.Lock()
 	Tangle.Transactions = append(Tangle.Transactions, genesisTransaction0)
-	// Tangle.Transactions = append(Tangle.Transactions, genesisTransaction1)
-	// Tangle.Transactions = append(Tangle.Transactions, genesisTransaction2)
-	// Tangle.Transactions = append(Tangle.Transactions, genesisTransaction3)
 	Tangle.Links = append(Tangle.Links, genesisLink00)
-	// Tangle.Links = append(Tangle.Links, genesisLink01)
-	// Tangle.Links = append(Tangle.Links, genesisLink02)
-	// Tangle.Links = append(Tangle.Links, genesisLink03)
 	mutex.Unlock()
 
 	transactionCount := 10
-	time := Tangle.h
-	delay := 3
+
+	now = time.Now()
+	myTime := now.UnixNano() / 1000000
+	delay := int64(3)
 
 	for len(Tangle.Transactions) < transactionCount {
-		time = time + delay
 
-		newTransaction := Transaction{len(Tangle.Transactions), len(Tangle.Transactions) * 100, time}
+		myTime = myTime + delay
+
+		newTransaction := Transaction{
+			len(Tangle.Transactions),
+			len(Tangle.Transactions) * 100,
+			myTime,
+			time.Unix(0, myTime*1000000).String()}
 
 		mutex.Lock()
 		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
@@ -349,20 +366,20 @@ func generateTangle() {
 
 		candidates := []int{}
 		for _, c := range Tangle.Transactions {
-			if t.Time-Tangle.h > c.Time {
+			if t.TimeInt-Tangle.h > c.TimeInt {
 				candidates = append(candidates, c.Index)
 			}
 		}
 
 		candidateLinks := []Link{}
 		for _, l := range Tangle.Links {
-			if t.Time-Tangle.h > Tangle.Transactions[l.Source].Time {
+			if t.TimeInt-Tangle.h > Tangle.Transactions[l.Source].TimeInt {
 				candidateLinks = append(candidateLinks, l)
 			}
 		}
 
 		tips := getTips(candidates, candidateLinks)
-		fmt.Println(tips)
+		//fmt.Println(tips)
 
 		mutex.Lock()
 		if len(tips) > 0 {
@@ -393,7 +410,10 @@ func generateTransaction(lastTransaction Transaction, Data int) Transaction {
 
 	newTransaction.Index = lastTransaction.Index + 1
 	newTransaction.Data = Data
-	newTransaction.Time = 1
+
+	now := time.Now()
+	newTransaction.TimeInt = now.UnixNano() / 1000000
+	newTransaction.TimeString = time.Unix(0, now.UnixNano()).String()
 
 	return newTransaction
 }
