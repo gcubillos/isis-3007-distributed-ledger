@@ -52,6 +52,7 @@ var Tangle struct {
 	lambda       float32
 	alpha        float32
 	h            int64
+	tipSelection string
 }
 
 var mutex = &sync.Mutex{}
@@ -213,8 +214,41 @@ func writeData(rw *bufio.ReadWriter) {
 		}
 
 		newTransaction := generateTransaction(Tangle.Transactions[len(Tangle.Transactions)-1], data)
-		newLink1 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-2], newTransaction)
-		newLink2 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-1], newTransaction)
+
+		//START: New way of forming Links
+
+		// candidates := []int{}
+		// for _, c := range Tangle.Transactions {
+		// 	if newTransaction.TimeInt-Tangle.h > c.TimeInt {
+		// 		candidates = append(candidates, c.Index)
+		// 	}
+		// }
+
+		// candidateLinks := []Link{}
+		// for _, l := range Tangle.Links {
+		// 	if newTransaction.TimeInt-Tangle.h > Tangle.Transactions[l.Source].TimeInt {
+		// 		candidateLinks = append(candidateLinks, l)
+		// 	}
+		// }
+
+		// tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
+		// fmt.Println(tips)
+
+		// mutex.Lock()
+		// if len(tips) > 0 {
+		// 	newLink := generateLink(Tangle.Transactions[tips[0]], newTransaction)
+		// 	Tangle.Links = append(Tangle.Links, newLink)
+		// 	if len(tips) > 1 && tips[0] != tips[1] {
+		// 		newLink := generateLink(Tangle.Transactions[tips[1]], newTransaction)
+		// 		Tangle.Links = append(Tangle.Links, newLink)
+		// 	}
+		// }
+		// mutex.Unlock()
+
+		//END: New way of forming Links
+
+		newLink1 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-1], newTransaction)
+		newLink2 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-2], newTransaction)
 
 		if isTransactionValid(newTransaction, Tangle.Transactions[len(Tangle.Transactions)-1]) {
 			mutex.Lock()
@@ -224,9 +258,9 @@ func writeData(rw *bufio.ReadWriter) {
 			mutex.Unlock()
 		}
 
-		//Imprimir desde aquí
+		//Start: Print here
 
-		//Imprimir hasta aquí
+		//END: Print here
 
 		bytes, err := json.Marshal(Tangle)
 		if err != nil {
@@ -331,6 +365,7 @@ func generateTangle() {
 	Tangle.lambda = 1.5
 	Tangle.alpha = 0.5
 	Tangle.h = 1
+	Tangle.tipSelection = "uniformRandom"
 
 	now := time.Now()
 	genesisTransaction0 := Transaction{0, 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String()}
@@ -378,8 +413,8 @@ func generateTangle() {
 			}
 		}
 
-		tips := getTips(candidates, candidateLinks)
-		//fmt.Println(tips)
+		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
+		fmt.Println(tips)
 
 		mutex.Lock()
 		if len(tips) > 0 {
@@ -455,25 +490,33 @@ func isTip(transaction Transaction) bool {
 
 }
 
-func getTips(candidates []int, candidateLinks []Link) []int {
+func getTips(algorithm string, candidates []int, candidateLinks []Link) []int {
 
-	paso1 := []int{}
-	for _, t := range candidates {
-		if isTip(Tangle.Transactions[t]) {
-			paso1 = append(paso1, t)
-		}
-	}
+	if algorithm == "uniformRandom" {
 
-	tips := []int{}
-	for _, t := range paso1 {
-		for _, l := range candidateLinks {
-			if l.Source == t {
-				tips = append(tips, t)
+		paso1 := []int{}
+		for _, t := range candidates {
+			if isTip(Tangle.Transactions[t]) {
+				paso1 = append(paso1, t)
 			}
 		}
-	}
 
-	return tips
+		tips := []int{}
+		for _, t := range paso1 {
+			for _, l := range candidateLinks {
+				if l.Source == t {
+					tips = append(tips, t)
+				}
+			}
+		}
+
+		if len(tips) == 0 {
+			return []int{}
+		}
+		return []int{choose(tips), choose(tips)}
+	}
+	return []int{}
+
 }
 
 func getAncestors(root Transaction) ([]Transaction, []Link) {
