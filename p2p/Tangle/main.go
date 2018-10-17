@@ -80,6 +80,7 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 
 	opts := []libp2p.Option{
 		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
+		//libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/192.168.5.161/tcp/%d", listenPort)),
 		libp2p.Identity(priv),
 	}
 
@@ -514,6 +515,16 @@ func getTips(algorithm string, candidates []int, candidateLinks []Link) []int {
 			return []int{}
 		}
 		return []int{choose(tips), choose(tips)}
+	}
+	if algorithm == "unWeightedMCMC" {
+
+		return []int{}
+
+	}
+	if algorithm == "weightedMCMC" {
+
+		return []int{}
+
 	}
 	return []int{}
 

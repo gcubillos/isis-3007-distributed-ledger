@@ -32,15 +32,24 @@ import (
 
 // Block represents each 'item' in the blockchain
 type Block struct {
-	Index     int
-	Timestamp string
-	BPM       int
-	Hash      string
-	PrevHash  string
+	Index      int
+	Timestamp  string
+	BPM        int
+	Hash       string
+	PrevHash   string
+	Difficulty int
+	Nonce      string
+}
+
+type blockchain struct {
+	Blocks []Block
 }
 
 // Blockchain is a series of validated Blocks
-var Blockchain []Block
+var Blockchain struct {
+	Blocks     []Block
+	Difficulty int
+}
 
 var mutex = &sync.Mutex{}
 
@@ -136,14 +145,16 @@ func readData(rw *bufio.ReadWriter) {
 		}
 		if str != "\n" {
 
-			chain := make([]Block, 0)
-			if err := json.Unmarshal([]byte(str), &chain); err != nil {
+			b1 := blockchain{
+				Blocks: make([]Block, 0),
+			}
+			if err := json.Unmarshal([]byte(str), &b1); err != nil {
 				log.Fatal(err)
 			}
 
 			mutex.Lock()
-			if len(chain) > len(Blockchain) {
-				Blockchain = chain
+			if len(b1.Blocks) > len(Blockchain.Blocks) {
+				Blockchain.Blocks = b1.Blocks
 				bytes, err := json.MarshalIndent(Blockchain, "", "  ")
 				if err != nil {
 
@@ -192,11 +203,11 @@ func writeData(rw *bufio.ReadWriter) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		newBlock := generateBlock(Blockchain[len(Blockchain)-1], bpm)
+		newBlock := generateBlock(Blockchain.Blocks[len(Blockchain.Blocks)-1], bpm)
 
-		if isBlockValid(newBlock, Blockchain[len(Blockchain)-1]) {
+		if isBlockValid(newBlock, Blockchain.Blocks[len(Blockchain.Blocks)-1]) {
 			mutex.Lock()
-			Blockchain = append(Blockchain, newBlock)
+			Blockchain.Blocks = append(Blockchain.Blocks, newBlock)
 			mutex.Unlock()
 		}
 
@@ -220,9 +231,10 @@ func main() {
 	genesisBlock := Block{}
 
 	t := time.Now()
-	genesisBlock = Block{0, time.Unix(0, t.UnixNano()).String(), 0, calculateHash(genesisBlock), ""}
+	genesisBlock = Block{0, time.Unix(0, t.UnixNano()).String(), 0, calculateHash(genesisBlock), "", Blockchain.Difficulty, ""}
 
-	Blockchain = append(Blockchain, genesisBlock)
+	Blockchain.Difficulty = 0
+	Blockchain.Blocks = append(Blockchain.Blocks, genesisBlock)
 
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
@@ -323,7 +335,8 @@ func isBlockValid(newBlock, oldBlock Block) bool {
 
 // SHA256 hashing
 func calculateHash(block Block) string {
-	record := strconv.Itoa(block.Index) + block.Timestamp + strconv.Itoa(block.BPM) + block.PrevHash
+	record := strconv.Itoa(block.Index) + block.Timestamp +
+		strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
@@ -335,14 +348,33 @@ func generateBlock(oldBlock Block, BPM int) Block {
 
 	var newBlock Block
 
-	newBlock.Index = oldBlock.Index + 1
-
 	t := time.Now()
 	newBlock.Timestamp = time.Unix(0, t.UnixNano()).String()
 
+	newBlock.Index = oldBlock.Index + 1
 	newBlock.BPM = BPM
 	newBlock.PrevHash = oldBlock.Hash
-	newBlock.Hash = calculateHash(newBlock)
 
+	newBlock.Difficulty = Blockchain.Difficulty
+
+	for i := 0; ; i++ {
+		hex := fmt.Sprintf("%x", i)
+		newBlock.Nonce = hex
+		if !isHashValid(calculateHash(newBlock), newBlock.Difficulty) {
+			fmt.Println(calculateHash(newBlock), " do more work!")
+			time.Sleep(time.Second)
+			continue
+		} else {
+			fmt.Println(calculateHash(newBlock), " work done!")
+			newBlock.Hash = calculateHash(newBlock)
+			break
+		}
+
+	}
 	return newBlock
+}
+
+func isHashValid(hash string, difficulty int) bool {
+	prefix := strings.Repeat("0", difficulty)
+	return strings.HasPrefix(hash, prefix)
 }
