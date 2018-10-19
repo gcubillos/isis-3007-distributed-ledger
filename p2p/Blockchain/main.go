@@ -77,11 +77,11 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 		return nil, err
 	}
 
-	//myIP4 := GetOutboundIP()
+	myIP4 := GetOutboundIP()
 
 	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
-		//libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%d", myIP4, listenPort)),
+		//libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
+		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%d", myIP4, listenPort)),
 		libp2p.Identity(priv),
 	}
 

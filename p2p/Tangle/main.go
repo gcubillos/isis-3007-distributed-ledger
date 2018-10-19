@@ -33,6 +33,7 @@ type Transaction struct {
 	Operation  string
 	TimeInt    int64
 	TimeString string
+	Weight     int
 }
 
 type Link struct {
@@ -89,7 +90,7 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 	//myIP4 := GetOutboundIP()
 
 	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/192.168.5.161/tcp/%d", listenPort)),
+		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
 		//libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%d", myIP4, listenPort)),
 		libp2p.Identity(priv),
 	}
@@ -242,46 +243,51 @@ func writeData(rw *bufio.ReadWriter) {
 
 		//START: New way of forming Links
 
-		// candidates := []int{}
-		// for _, c := range Tangle.Transactions {
-		// 	if newTransaction.TimeInt-Tangle.h > c.TimeInt {
-		// 		candidates = append(candidates, c.Index)
-		// 	}
-		// }
+		candidates := []int{}
+		for _, c := range Tangle.Transactions {
+			if newTransaction.TimeInt-Tangle.h > c.TimeInt {
+				candidates = append(candidates, c.Index)
+			}
+		}
 
-		// candidateLinks := []Link{}
-		// for _, l := range Tangle.Links {
-		// 	if newTransaction.TimeInt-Tangle.h > Tangle.Transactions[l.Source].TimeInt {
-		// 		candidateLinks = append(candidateLinks, l)
-		// 	}
-		// }
+		candidateLinks := []Link{}
+		for _, l := range Tangle.Links {
+			if newTransaction.TimeInt-Tangle.h > Tangle.Transactions[l.Source].TimeInt {
+				candidateLinks = append(candidateLinks, l)
+			}
+		}
 
-		// tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
-		// fmt.Println("NEW TIPS:", tips)
+		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
 
-		// mutex.Lock()
-		// if len(tips) > 0 {
-		// 	newLink := generateLink(Tangle.Transactions[tips[0]], newTransaction)
-		// 	Tangle.Links = append(Tangle.Links, newLink)
-		// 	if len(tips) > 1 && tips[0] != tips[1] {
-		// 		newLink := generateLink(Tangle.Transactions[tips[1]], newTransaction)
-		// 		Tangle.Links = append(Tangle.Links, newLink)
-		// 	}
-		// }
-		// mutex.Unlock()
+		mutex.Lock()
+		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
+		if len(tips) > 0 {
+			newLink := generateLink(Tangle.Transactions[tips[0]], newTransaction)
+			Tangle.Links = append(Tangle.Links, newLink)
+			if len(tips) > 1 && tips[0] != tips[1] {
+				newLink := generateLink(Tangle.Transactions[tips[1]], newTransaction)
+				Tangle.Links = append(Tangle.Links, newLink)
+			}
+		}
+		mutex.Unlock()
 
 		//END: New way of forming Links
 
-		newLink1 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-1], newTransaction)
-		newLink2 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-2], newTransaction)
+		// newLink1 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-1], newTransaction)
+		// newLink2 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-2], newTransaction)
 
-		if isTransactionValid(newTransaction, Tangle.Transactions[len(Tangle.Transactions)-1]) {
-			mutex.Lock()
-			Tangle.Transactions = append(Tangle.Transactions, newTransaction)
-			Tangle.Links = append(Tangle.Links, newLink1)
-			Tangle.Links = append(Tangle.Links, newLink2)
-			mutex.Unlock()
-		}
+		// if isTransactionValid(newTransaction, Tangle.Transactions[len(Tangle.Transactions)-1]) {
+		// 	mutex.Lock()
+		// 	Tangle.Transactions = append(Tangle.Transactions, newTransaction)
+		// 	Tangle.Links = append(Tangle.Links, newLink1)
+		// 	Tangle.Links = append(Tangle.Links, newLink2)
+		// 	mutex.Unlock()
+		// }
+
+		//START: Good place to print
+		fmt.Println("TOPO: ", topologicalSort())
+
+		//END: Good place to print
 
 		bytes, err := json.Marshal(Tangle)
 		if err != nil {
@@ -294,6 +300,7 @@ func writeData(rw *bufio.ReadWriter) {
 		rw.WriteString(fmt.Sprintf("%s\n", string(bytes)))
 		rw.Flush()
 		mutex.Unlock()
+
 	}
 
 }
@@ -399,7 +406,7 @@ func generateTangle() {
 
 	now := time.Now()
 	initialTime = now.UnixNano()
-	genesisTransaction0 := Transaction{0, "", now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String()}
+	genesisTransaction0 := Transaction{0, "", now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1}
 	genesisLink00 := generateLink(genesisTransaction0, genesisTransaction0)
 
 	mutex.Lock()
@@ -407,7 +414,7 @@ func generateTangle() {
 	Tangle.Links = append(Tangle.Links, genesisLink00)
 	mutex.Unlock()
 
-	transactionCount := 100
+	transactionCount := 20
 
 	now = time.Now()
 	myTime := now.UnixNano() / 1000000
@@ -421,7 +428,8 @@ func generateTangle() {
 			len(Tangle.Transactions),
 			"nothing",
 			myTime,
-			time.Unix(0, myTime*1000000).String()}
+			time.Unix(0, myTime*1000000).String(),
+			1}
 
 		mutex.Lock()
 		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
@@ -480,6 +488,7 @@ func generateTransaction(lastTransaction Transaction, Operation string) Transact
 	now := time.Now()
 	newTransaction.TimeInt = now.UnixNano() / 1000000
 	newTransaction.TimeString = time.Unix(0, now.UnixNano()).String()
+	newTransaction.Weight = 1
 
 	return newTransaction
 }
@@ -680,7 +689,7 @@ func getChildrenLists() [][]int {
 // DFS-based topological sort
 func topologicalSort() []int {
 	childrenLists := getChildrenLists()
-	unvisited := Tangle.Transactions
+	unvisited := Tangle.Transactions[1:]
 	result := []int{}
 
 	for len(unvisited) > 0 {
@@ -693,6 +702,9 @@ func topologicalSort() []int {
 		opp := len(result) - 1 - i
 		result[i], result[opp] = result[opp], result[i]
 	}
+
+	// Add 0
+	result = append(result, 0)
 	return result
 }
 
@@ -728,4 +740,17 @@ func GetOutboundIP() string {
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
 	return localAddr.IP.String()
+}
+
+func weightedChoose() float64 {
+
+	random := randomFloat()
+	return random
+}
+
+func randomFloat() float64 {
+	source := mrand.NewSource(time.Now().UnixNano())
+	r := mrand.New(source)
+
+	return r.Float64()
 }
