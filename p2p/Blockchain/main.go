@@ -32,22 +32,24 @@ import (
 
 // Block represents each 'item' in the blockchain
 type Block struct {
-	Index      int
-	Timestamp  string
-	BPM        int
-	Hash       string
-	PrevHash   string
-	Difficulty int
-	Nonce      string
+	Index       int
+	Timestamp   string
+	Transaction string
+	Hash        string
+	PrevHash    string
+	Difficulty  int
+	Nonce       string
 }
 
 type blockchain struct {
 	Blocks []Block
+	State  map[string]int
 }
 
 // Blockchain is a series of validated Blocks
 var Blockchain struct {
 	Blocks     []Block
+	State      map[string]int
 	Difficulty int
 }
 
@@ -147,6 +149,7 @@ func readData(rw *bufio.ReadWriter) {
 
 			b1 := blockchain{
 				Blocks: make([]Block, 0),
+				State:  make(map[string]int),
 			}
 			if err := json.Unmarshal([]byte(str), &b1); err != nil {
 				log.Fatal(err)
@@ -155,6 +158,7 @@ func readData(rw *bufio.ReadWriter) {
 			mutex.Lock()
 			if len(b1.Blocks) > len(Blockchain.Blocks) {
 				Blockchain.Blocks = b1.Blocks
+				Blockchain.State = b1.State
 				bytes, err := json.MarshalIndent(Blockchain, "", "  ")
 				if err != nil {
 
@@ -199,11 +203,22 @@ func writeData(rw *bufio.ReadWriter) {
 		}
 
 		sendData = strings.Replace(sendData, "\n", "", -1)
-		bpm, err := strconv.Atoi(sendData)
+
+		ss := strings.Fields(sendData)
+
+		amountString := ss[1]
+		amountInt, err := strconv.Atoi(amountString)
 		if err != nil {
 			log.Fatal(err)
 		}
-		newBlock := generateBlock(Blockchain.Blocks[len(Blockchain.Blocks)-1], bpm)
+
+		from := ss[3]
+		to := ss[5]
+
+		Blockchain.State[from] = Blockchain.State[from] - amountInt
+		Blockchain.State[to] = Blockchain.State[to] + amountInt
+
+		newBlock := generateBlock(Blockchain.Blocks[len(Blockchain.Blocks)-1], sendData)
 
 		if isBlockValid(newBlock, Blockchain.Blocks[len(Blockchain.Blocks)-1]) {
 			mutex.Lock()
@@ -231,10 +246,20 @@ func main() {
 	genesisBlock := Block{}
 
 	t := time.Now()
-	genesisBlock = Block{0, time.Unix(0, t.UnixNano()).String(), 0, calculateHash(genesisBlock), "", Blockchain.Difficulty, ""}
+
+	genesisBlock = Block{0, time.Unix(0, t.UnixNano()).String(), "", calculateHash(genesisBlock), "", Blockchain.Difficulty, ""}
 
 	Blockchain.Difficulty = 0
 	Blockchain.Blocks = append(Blockchain.Blocks, genesisBlock)
+
+	//Initial State
+	state := make(map[string]int)
+
+	state["Alice"] = 50
+	state["Bob"] = 50
+	state["Charles"] = 50
+
+	Blockchain.State = state
 
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
@@ -335,8 +360,9 @@ func isBlockValid(newBlock, oldBlock Block) bool {
 
 // SHA256 hashing
 func calculateHash(block Block) string {
-	record := strconv.Itoa(block.Index) + block.Timestamp +
-		strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
+	// record := strconv.Itoa(block.Index) + block.Timestamp +
+	// 	strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
+	record := strconv.Itoa(block.Index) + block.Timestamp + block.PrevHash + block.Nonce
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
@@ -344,7 +370,7 @@ func calculateHash(block Block) string {
 }
 
 // create a new block using previous block's hash
-func generateBlock(oldBlock Block, BPM int) Block {
+func generateBlock(oldBlock Block, Transaction string) Block {
 
 	var newBlock Block
 
@@ -352,7 +378,7 @@ func generateBlock(oldBlock Block, BPM int) Block {
 	newBlock.Timestamp = time.Unix(0, t.UnixNano()).String()
 
 	newBlock.Index = oldBlock.Index + 1
-	newBlock.BPM = BPM
+	newBlock.Transaction = Transaction
 	newBlock.PrevHash = oldBlock.Hash
 
 	newBlock.Difficulty = Blockchain.Difficulty

@@ -30,7 +30,7 @@ import (
 
 type Transaction struct {
 	Index      int
-	Data       int
+	Operation  string
 	TimeInt    int64
 	TimeString string
 }
@@ -43,6 +43,7 @@ type Link struct {
 type tangle struct {
 	Transactions []Transaction
 	Links        []Link
+	State        map[string]int
 }
 
 // Tangle is a DAG of Transactions
@@ -53,6 +54,7 @@ var Tangle struct {
 	alpha        float32
 	h            int64
 	tipSelection string
+	State        map[string]int
 }
 
 var mutex = &sync.Mutex{}
@@ -153,6 +155,7 @@ func readData(rw *bufio.ReadWriter) {
 			t1 := tangle{
 				Transactions: make([]Transaction, 0),
 				Links:        make([]Link, 0),
+				State:        make(map[string]int),
 			}
 
 			if err := json.Unmarshal([]byte(str), &t1); err != nil {
@@ -164,6 +167,7 @@ func readData(rw *bufio.ReadWriter) {
 				len(t1.Links) > len(Tangle.Links) {
 				Tangle.Transactions = t1.Transactions
 				Tangle.Links = t1.Links
+				Tangle.State = t1.State
 
 				bytes, err := json.MarshalIndent(Tangle, "", "  ")
 				if err != nil {
@@ -209,12 +213,22 @@ func writeData(rw *bufio.ReadWriter) {
 		}
 
 		sendData = strings.Replace(sendData, "\n", "", -1)
-		data, err := strconv.Atoi(sendData)
+
+		ss := strings.Fields(sendData)
+
+		amountString := ss[1]
+		amountInt, err := strconv.Atoi(amountString)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		newTransaction := generateTransaction(Tangle.Transactions[len(Tangle.Transactions)-1], data)
+		from := ss[3]
+		to := ss[5]
+
+		Tangle.State[from] = Tangle.State[from] - amountInt
+		Tangle.State[to] = Tangle.State[to] + amountInt
+
+		newTransaction := generateTransaction(Tangle.Transactions[len(Tangle.Transactions)-1], sendData)
 
 		//START: New way of forming Links
 
@@ -368,8 +382,17 @@ func generateTangle() {
 	Tangle.h = 1
 	Tangle.tipSelection = "uniformRandom"
 
+	//Initial State
+	state := make(map[string]int)
+
+	state["Alice"] = 50
+	state["Bob"] = 50
+	state["Charles"] = 50
+
+	Tangle.State = state
+
 	now := time.Now()
-	genesisTransaction0 := Transaction{0, 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String()}
+	genesisTransaction0 := Transaction{0, "", now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String()}
 	genesisLink00 := generateLink(genesisTransaction0, genesisTransaction0)
 
 	mutex.Lock()
@@ -389,7 +412,7 @@ func generateTangle() {
 
 		newTransaction := Transaction{
 			len(Tangle.Transactions),
-			len(Tangle.Transactions) * 100,
+			"nothing",
 			myTime,
 			time.Unix(0, myTime*1000000).String()}
 
@@ -440,12 +463,12 @@ func isTransactionValid(newTransaction, oldTransaction Transaction) bool {
 }
 
 // create a new Transaction using previous Transactions index
-func generateTransaction(lastTransaction Transaction, Data int) Transaction {
+func generateTransaction(lastTransaction Transaction, Operation string) Transaction {
 
 	var newTransaction Transaction
 
 	newTransaction.Index = lastTransaction.Index + 1
-	newTransaction.Data = Data
+	newTransaction.Operation = Operation
 
 	now := time.Now()
 	newTransaction.TimeInt = now.UnixNano() / 1000000
