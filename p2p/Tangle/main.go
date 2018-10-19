@@ -10,18 +10,18 @@ import (
 	"io"
 	"log"
 	mrand "math/rand"
+	"net"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	golog "github.com/ipfs/go-log"
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	host "github.com/libp2p/go-libp2p-host"
-	net "github.com/libp2p/go-libp2p-net"
+	network "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
@@ -59,6 +59,12 @@ var Tangle struct {
 
 var mutex = &sync.Mutex{}
 
+//Metrics
+var initialTime int64
+var throughput int64
+var latency int64
+var size int
+
 // makeBasicHost creates a LibP2P host with a random peer ID listening on the
 // given multiaddress. It will use secio if secio is true.
 func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error) {
@@ -80,9 +86,11 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 		return nil, err
 	}
 
+	//myIP4 := GetOutboundIP()
+
 	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
-		//libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/192.168.5.161/tcp/%d", listenPort)),
+		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/192.168.5.161/tcp/%d", listenPort)),
+		//libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%d", myIP4, listenPort)),
 		libp2p.Identity(priv),
 	}
 
@@ -126,7 +134,7 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 	return basicHost, nil
 }
 
-func handleStream(s net.Stream) {
+func handleStream(s network.Stream) {
 
 	log.Println("Got a new stream!")
 
@@ -177,6 +185,7 @@ func readData(rw *bufio.ReadWriter) {
 				// Green console color: 	\x1b[32m
 				// Reset console color: 	\x1b[0m
 				fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
+
 			}
 			mutex.Unlock()
 		}
@@ -206,6 +215,7 @@ func writeData(rw *bufio.ReadWriter) {
 	stdReader := bufio.NewReader(os.Stdin)
 
 	for {
+
 		fmt.Print("> ")
 		sendData, err := stdReader.ReadString('\n')
 		if err != nil {
@@ -247,7 +257,7 @@ func writeData(rw *bufio.ReadWriter) {
 		// }
 
 		// tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
-		// fmt.Println(tips)
+		// fmt.Println("NEW TIPS:", tips)
 
 		// mutex.Lock()
 		// if len(tips) > 0 {
@@ -273,16 +283,12 @@ func writeData(rw *bufio.ReadWriter) {
 			mutex.Unlock()
 		}
 
-		//Start: Print here
-
-		//END: Print here
-
 		bytes, err := json.Marshal(Tangle)
 		if err != nil {
 			log.Println(err)
 		}
 
-		spew.Dump(Tangle)
+		//spew.Dump(Tangle)
 
 		mutex.Lock()
 		rw.WriteString(fmt.Sprintf("%s\n", string(bytes)))
@@ -392,6 +398,7 @@ func generateTangle() {
 	Tangle.State = state
 
 	now := time.Now()
+	initialTime = now.UnixNano()
 	genesisTransaction0 := Transaction{0, "", now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String()}
 	genesisLink00 := generateLink(genesisTransaction0, genesisTransaction0)
 
@@ -400,7 +407,7 @@ func generateTangle() {
 	Tangle.Links = append(Tangle.Links, genesisLink00)
 	mutex.Unlock()
 
-	transactionCount := 10
+	transactionCount := 100
 
 	now = time.Now()
 	myTime := now.UnixNano() / 1000000
@@ -438,7 +445,7 @@ func generateTangle() {
 		}
 
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
-		fmt.Println(tips)
+		//fmt.Println(tips)
 
 		mutex.Lock()
 		if len(tips) > 0 {
@@ -709,4 +716,16 @@ func visit(transaction Transaction, unvisited []Transaction, childrenLists [][]i
 	newUnvisited := unvisited[1:]
 
 	return result, newUnvisited
+}
+
+func GetOutboundIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP.String()
 }

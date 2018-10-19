@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	mrand "math/rand"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -23,7 +24,7 @@ import (
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	host "github.com/libp2p/go-libp2p-host"
-	net "github.com/libp2p/go-libp2p-net"
+	network "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
@@ -76,8 +77,11 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 		return nil, err
 	}
 
+	//myIP4 := GetOutboundIP()
+
 	opts := []libp2p.Option{
 		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
+		//libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%d", myIP4, listenPort)),
 		libp2p.Identity(priv),
 	}
 
@@ -121,7 +125,7 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 	return basicHost, nil
 }
 
-func handleStream(s net.Stream) {
+func handleStream(s network.Stream) {
 
 	log.Println("Got a new stream!")
 
@@ -403,4 +407,16 @@ func generateBlock(oldBlock Block, Transaction string) Block {
 func isHashValid(hash string, difficulty int) bool {
 	prefix := strings.Repeat("0", difficulty)
 	return strings.HasPrefix(hash, prefix)
+}
+
+func GetOutboundIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP.String()
 }
