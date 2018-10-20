@@ -34,6 +34,7 @@ type Transaction struct {
 	TimeInt    int64
 	TimeString string
 	Weight     int
+	CumWeight  int
 }
 
 type Link struct {
@@ -87,7 +88,7 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 		return nil, err
 	}
 
-	//myIP4 := GetOutboundIP()
+	//myIP4 := getOutboundIP()
 
 	opts := []libp2p.Option{
 		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
@@ -258,6 +259,7 @@ func writeData(rw *bufio.ReadWriter) {
 		}
 
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
+		fmt.Println("NEW TIPS: ", tips)
 
 		mutex.Lock()
 		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
@@ -285,7 +287,7 @@ func writeData(rw *bufio.ReadWriter) {
 		// }
 
 		//START: Good place to print
-		fmt.Println("TOPO: ", topologicalSort())
+		calculateWeights()
 
 		//END: Good place to print
 
@@ -393,7 +395,7 @@ func generateTangle() {
 	Tangle.lambda = 1.5
 	Tangle.alpha = 0.5
 	Tangle.h = 1
-	Tangle.tipSelection = "uniformRandom"
+	Tangle.tipSelection = "unWeightedMCMC"
 
 	//Initial State
 	state := make(map[string]int)
@@ -406,7 +408,7 @@ func generateTangle() {
 
 	now := time.Now()
 	initialTime = now.UnixNano()
-	genesisTransaction0 := Transaction{0, "", now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1}
+	genesisTransaction0 := Transaction{0, "", now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0}
 	genesisLink00 := generateLink(genesisTransaction0, genesisTransaction0)
 
 	mutex.Lock()
@@ -414,7 +416,7 @@ func generateTangle() {
 	Tangle.Links = append(Tangle.Links, genesisLink00)
 	mutex.Unlock()
 
-	transactionCount := 20
+	transactionCount := 10
 
 	now = time.Now()
 	myTime := now.UnixNano() / 1000000
@@ -429,7 +431,8 @@ func generateTangle() {
 			"nothing",
 			myTime,
 			time.Unix(0, myTime*1000000).String(),
-			1}
+			1,
+			0}
 
 		mutex.Lock()
 		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
@@ -453,7 +456,7 @@ func generateTangle() {
 		}
 
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
-		//fmt.Println(tips)
+		fmt.Println("TIPS: ", tips)
 
 		mutex.Lock()
 		if len(tips) > 0 {
@@ -557,12 +560,26 @@ func getTips(algorithm string, candidates []int, candidateLinks []Link) []int {
 	}
 	if algorithm == "unWeightedMCMC" {
 
-		return []int{}
+		if len(Tangle.Transactions) == 0 {
+			return []int{}
+		}
+
+		start := Tangle.Transactions[0]
+
+		return []int{randomWalk(start).Index, randomWalk(start).Index}
 
 	}
 	if algorithm == "weightedMCMC" {
 
-		return []int{}
+		if len(Tangle.Transactions) == 0 {
+			return []int{}
+		}
+
+		start := Tangle.Transactions[0]
+
+		calculateWeights()
+
+		return []int{weightedRandomWalk(start).Index, weightedRandomWalk(start).Index}
 
 	}
 	return []int{}
@@ -644,7 +661,6 @@ func getDescendants(root Transaction) ([]Transaction, []Link) {
 func choose(array []int) int {
 	source := mrand.NewSource(time.Now().UnixNano())
 	r := mrand.New(source)
-
 	index := r.Intn(len(array))
 
 	return array[index]
@@ -655,22 +671,13 @@ func getApprovers(transanction Transaction) []int {
 
 	for _, link := range Tangle.Links {
 		if link.Target == transanction.Index {
-			approvers = append(approvers, link.Source)
+			if link.Source != 0 {
+				approvers = append(approvers, link.Source)
+			}
 		}
 	}
 
 	return approvers
-}
-
-func randomWalk(start Transaction) Transaction {
-	particle := start
-
-	if !isTip(particle) {
-		approvers := getApprovers(particle)
-		particle = randomWalk(Tangle.Transactions[choose(approvers)])
-	}
-
-	return particle
 }
 
 func getChildrenLists() [][]int {
@@ -730,7 +737,7 @@ func visit(transaction Transaction, unvisited []Transaction, childrenLists [][]i
 	return result, newUnvisited
 }
 
-func GetOutboundIP() string {
+func getOutboundIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		log.Fatal(err)
@@ -753,4 +760,82 @@ func randomFloat() float64 {
 	r := mrand.New(source)
 
 	return r.Float64()
+}
+
+func calculateWeights() {
+	sorted := topologicalSort()
+	sorted = sorted[:len(sorted)-1]
+
+	//Initialize an empty slice for each node
+	l := len(Tangle.Transactions)
+	ancestorSlices := make([][]int, l)
+
+	childrenLists := getChildrenLists()
+
+	for _, node := range sorted {
+		for _, child := range childrenLists[node] {
+			ancestorSlices[child] = append(ancestorSlices[child], ancestorSlices[node]...)
+			ancestorSlices[child] = append(ancestorSlices[child], node)
+		}
+		ancestorSlices[node] = unique(ancestorSlices[node])
+		Tangle.Transactions[node].CumWeight = len(ancestorSlices[node]) + 1
+	}
+}
+
+func unique(intSlice []int) []int {
+	keys := make(map[int]bool)
+	list := []int{}
+	for _, entry := range intSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
+func randomWalk(start Transaction) Transaction {
+	particle := start
+
+	if !isTip(particle) {
+		approvers := getApprovers(particle)
+		if len(approvers) != 0 {
+			particle = randomWalk(Tangle.Transactions[choose(approvers)])
+		}
+	}
+
+	return particle
+}
+
+func weightedRandomWalk(start Transaction) Transaction {
+	particle := start
+
+	for !isTip(particle) {
+		approvers := getApprovers(particle)
+		cumWeights := []int{}
+
+		for _, approver := range approvers {
+			cumWeights = append(cumWeights, Tangle.Transactions[approver].CumWeight)
+
+			// normalize so maximum cumWeight is 0
+
+		}
+
+	}
+
+	return particle
+}
+
+func minMax(array []int) (int, int) {
+	var max = array[0]
+	var min = array[0]
+	for _, value := range array {
+		if max < value {
+			max = value
+		}
+		if min > value {
+			min = value
+		}
+	}
+	return min, max
 }

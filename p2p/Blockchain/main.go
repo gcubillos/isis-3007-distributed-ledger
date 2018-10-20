@@ -77,7 +77,7 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 		return nil, err
 	}
 
-	myIP4 := GetOutboundIP()
+	myIP4 := getOutboundIP()
 
 	opts := []libp2p.Option{
 		//libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
@@ -409,7 +409,7 @@ func isHashValid(hash string, difficulty int) bool {
 	return strings.HasPrefix(hash, prefix)
 }
 
-func GetOutboundIP() string {
+func getOutboundIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		log.Fatal(err)
