@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	mrand "math/rand"
 	"net"
 	"os"
@@ -395,7 +396,7 @@ func generateTangle() {
 	Tangle.lambda = 1.5
 	Tangle.alpha = 0.5
 	Tangle.h = 1
-	Tangle.tipSelection = "unWeightedMCMC"
+	Tangle.tipSelection = "weightedMCMC"
 
 	//Initial State
 	state := make(map[string]int)
@@ -456,7 +457,7 @@ func generateTangle() {
 		}
 
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
-		fmt.Println("TIPS: ", tips)
+		fmt.Println("START TIPS: ", tips)
 
 		mutex.Lock()
 		if len(tips) > 0 {
@@ -749,12 +750,6 @@ func getOutboundIP() string {
 	return localAddr.IP.String()
 }
 
-func weightedChoose() float64 {
-
-	random := randomFloat()
-	return random
-}
-
 func randomFloat() float64 {
 	source := mrand.NewSource(time.Now().UnixNano())
 	r := mrand.New(source)
@@ -810,20 +805,50 @@ func randomWalk(start Transaction) Transaction {
 func weightedRandomWalk(start Transaction) Transaction {
 	particle := start
 
-	for !isTip(particle) {
-		approvers := getApprovers(particle)
-		cumWeights := []int{}
+	if !isTip(particle) {
 
-		for _, approver := range approvers {
-			cumWeights = append(cumWeights, Tangle.Transactions[approver].CumWeight)
+		approvers := getApprovers(particle)
+		if len(approvers) != 0 {
+
+			cumWeights := []int{}
+			for _, approver := range approvers {
+				cumWeights = append(cumWeights, Tangle.Transactions[approver].CumWeight)
+			}
 
 			// normalize so maximum cumWeight is 0
+			_, maxCumWeight := minMax(cumWeights)
+			normalizedWeights := []int{}
+			for i := 0; i < len(cumWeights); i++ {
+				normalizedWeights = append(normalizedWeights, cumWeights[i]-maxCumWeight)
+			}
 
+			weights := []float64{}
+			for i := 0; i < len(normalizedWeights); i++ {
+				weights = append(weights, math.Exp(float64(normalizedWeights[i])*float64(Tangle.alpha)))
+			}
+			myInt := weightedChoose(approvers, weights)
+			particle = weightedRandomWalk(Tangle.Transactions[myInt])
 		}
-
 	}
 
 	return particle
+}
+
+func weightedChoose(approvers []int, weights []float64) int {
+	sum := float64(0)
+	for i := 0; i < len(weights); i++ {
+		sum = sum + weights[i]
+	}
+	rand := randomFloat() * sum
+
+	cumSum := weights[0]
+	for i := 1; i < len(approvers); i++ {
+		if rand < cumSum {
+			return approvers[i-1]
+		}
+		cumSum = cumSum + weights[i]
+	}
+	return approvers[len(approvers)-1]
 }
 
 func minMax(array []int) (int, int) {
