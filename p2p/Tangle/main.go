@@ -277,19 +277,7 @@ func writeData(rw *bufio.ReadWriter) {
 
 		//END: New way of forming Links
 
-		// newLink1 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-1], newTransaction)
-		// newLink2 := generateLink(Tangle.Transactions[len(Tangle.Transactions)-2], newTransaction)
-
-		// if isTransactionValid(newTransaction, Tangle.Transactions[len(Tangle.Transactions)-1]) {
-		// 	mutex.Lock()
-		// 	Tangle.Transactions = append(Tangle.Transactions, newTransaction)
-		// 	Tangle.Links = append(Tangle.Links, newLink1)
-		// 	Tangle.Links = append(Tangle.Links, newLink2)
-		// 	mutex.Unlock()
-		// }
-
 		//START: Good place to print
-		calculateWeights()
 
 		//END: Good place to print
 
@@ -411,11 +399,9 @@ func generateTangle() {
 	now := time.Now()
 	initialTime = now.UnixNano()
 	genesisTransaction0 := Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0}
-	genesisLink00 := generateLink(genesisTransaction0, genesisTransaction0)
 
 	mutex.Lock()
 	Tangle.Transactions = append(Tangle.Transactions, genesisTransaction0)
-	Tangle.Links = append(Tangle.Links, genesisLink00)
 	mutex.Unlock()
 
 	transactionCount := 10
@@ -450,7 +436,7 @@ func generateTangle() {
 		mutex.Unlock()
 	}
 
-	for _, t := range Tangle.Transactions {
+	for _, t := range Tangle.Transactions[1:] {
 
 		candidates := []int{}
 		for _, c := range Tangle.Transactions {
@@ -540,9 +526,7 @@ func isTip(transaction Transaction) bool {
 	if cuenta < 2 {
 		return true
 	}
-
 	return false
-
 }
 
 func getTips(algorithm string, candidates []int, candidateLinks []Link) []int {
@@ -683,9 +667,7 @@ func getApprovers(transanction Transaction) []int {
 
 	for _, link := range Tangle.Links {
 		if link.Target == transanction.Index {
-			if link.Source != 0 {
-				approvers = append(approvers, link.Source)
-			}
+			approvers = append(approvers, link.Source)
 		}
 	}
 
@@ -708,7 +690,7 @@ func getChildrenLists() [][]int {
 // DFS-based topological sort
 func topologicalSort() []int {
 	childrenLists := getChildrenLists()
-	unvisited := Tangle.Transactions[1:]
+	unvisited := Tangle.Transactions
 	result := []int{}
 
 	for len(unvisited) > 0 {
@@ -723,19 +705,18 @@ func topologicalSort() []int {
 	}
 
 	// Add 0
-	result = append(result, 0)
 	return result
 }
 
 func visit(transaction Transaction, unvisited []Transaction, childrenLists [][]int, result []int) ([]int, []Transaction) {
 
-	Esta := false
+	esta := false
 	for _, t := range unvisited {
 		if transaction.Index == t.Index {
-			Esta = true
+			esta = true
 		}
 	}
-	if !Esta {
+	if !esta {
 		return nil, nil
 	}
 
@@ -770,7 +751,6 @@ func randomFloat() float64 {
 
 func calculateWeights() {
 	sorted := topologicalSort()
-	sorted = sorted[:len(sorted)-1]
 
 	//Initialize an empty slice for each node
 	l := len(Tangle.Transactions)
@@ -846,6 +826,7 @@ func weightedRandomWalk(start Transaction) Transaction {
 }
 
 func weightedChoose(approvers []int, weights []float64) int {
+
 	sum := float64(0)
 	for i := 0; i < len(weights); i++ {
 		sum = sum + weights[i]
@@ -860,6 +841,7 @@ func weightedChoose(approvers []int, weights []float64) int {
 		cumSum = cumSum + weights[i]
 	}
 	return approvers[len(approvers)-1]
+
 }
 
 func minMax(array []int) (int, int) {
