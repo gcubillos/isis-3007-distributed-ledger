@@ -32,6 +32,7 @@ import (
 type Transaction struct {
 	Index      int
 	Operation  string
+	IotaTime   float64
 	TimeInt    int64
 	TimeString string
 	Weight     int
@@ -53,7 +54,7 @@ type tangle struct {
 var Tangle struct {
 	Transactions []Transaction
 	Links        []Link
-	lambda       float32
+	lambda       float64
 	alpha        float32
 	h            int64
 	tipSelection string
@@ -409,7 +410,7 @@ func generateTangle() {
 
 	now := time.Now()
 	initialTime = now.UnixNano()
-	genesisTransaction0 := Transaction{0, "", now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0}
+	genesisTransaction0 := Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0}
 	genesisLink00 := generateLink(genesisTransaction0, genesisTransaction0)
 
 	mutex.Lock()
@@ -419,6 +420,7 @@ func generateTangle() {
 
 	transactionCount := 10
 
+	iotaTime := float64(Tangle.h)
 	now = time.Now()
 	myTime := now.UnixNano() / 1000000
 	delay := int64(3)
@@ -427,9 +429,17 @@ func generateTangle() {
 
 		myTime = myTime + delay
 
+		//START: IOTA stuff
+		source := mrand.NewSource(time.Now().UnixNano())
+		r := mrand.New(source)
+		iotaDelay := r.ExpFloat64() / Tangle.lambda
+		iotaTime = iotaTime + iotaDelay
+		//END: IOTA stuff
+
 		newTransaction := Transaction{
 			len(Tangle.Transactions),
 			"nothing",
+			iotaTime,
 			myTime,
 			time.Unix(0, myTime*1000000).String(),
 			1,
@@ -488,6 +498,7 @@ func generateTransaction(lastTransaction Transaction, Operation string) Transact
 
 	newTransaction.Index = lastTransaction.Index + 1
 	newTransaction.Operation = Operation
+	newTransaction.IotaTime = 0
 
 	now := time.Now()
 	newTransaction.TimeInt = now.UnixNano() / 1000000
