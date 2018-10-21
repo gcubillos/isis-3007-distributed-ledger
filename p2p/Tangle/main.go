@@ -261,7 +261,6 @@ func writeData(rw *bufio.ReadWriter) {
 		}
 
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
-		fmt.Println("NEW TIPS: ", tips)
 
 		mutex.Lock()
 		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
@@ -453,7 +452,6 @@ func generateTangle() {
 		}
 
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
-		fmt.Println("START TIPS: ", tips)
 
 		mutex.Lock()
 		if len(tips) > 0 {
@@ -687,7 +685,6 @@ func getChildrenLists() [][]int {
 	return childrenLists
 }
 
-// DFS-based topological sort
 func topologicalSort() []int {
 	childrenLists := getChildrenLists()
 	unvisited := Tangle.Transactions

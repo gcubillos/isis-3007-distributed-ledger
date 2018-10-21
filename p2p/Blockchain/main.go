@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	golog "github.com/ipfs/go-log"
 	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
@@ -235,7 +234,7 @@ func writeData(rw *bufio.ReadWriter) {
 			log.Println(err)
 		}
 
-		spew.Dump(Blockchain)
+		//spew.Dump(Blockchain)
 
 		mutex.Lock()
 		rw.WriteString(fmt.Sprintf("%s\n", string(bytes)))
@@ -391,11 +390,11 @@ func generateBlock(oldBlock Block, Transaction string) Block {
 		hex := fmt.Sprintf("%x", i)
 		newBlock.Nonce = hex
 		if !isHashValid(calculateHash(newBlock), newBlock.Difficulty) {
-			fmt.Println(calculateHash(newBlock), " do more work!")
+			//fmt.Println(calculateHash(newBlock), " do more work!")
 			time.Sleep(time.Second)
 			continue
 		} else {
-			fmt.Println(calculateHash(newBlock), " work done!")
+			//fmt.Println(calculateHash(newBlock), " work done!")
 			newBlock.Hash = calculateHash(newBlock)
 			break
 		}
