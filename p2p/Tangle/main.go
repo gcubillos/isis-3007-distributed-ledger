@@ -384,7 +384,7 @@ func generateTangle() {
 	Tangle.lambda = 1.5
 	Tangle.alpha = 0.5
 	Tangle.h = 1
-	Tangle.tipSelection = "weightedMCMC"
+	Tangle.tipSelection = "unWeightedMCMC"
 
 	//Initial State
 	state := make(map[string]int)
@@ -452,6 +452,7 @@ func generateTangle() {
 		}
 
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
+		fmt.Println("Initial Tips: ", tips)
 
 		mutex.Lock()
 		if len(tips) > 0 {
@@ -536,6 +537,10 @@ func getTips(algorithm string, candidates []int, candidateLinks []Link) []int {
 			if isTip(Tangle.Transactions[t]) {
 				paso1 = append(paso1, t)
 			}
+		}
+
+		if len(candidateLinks) == 0 {
+			return []int{0}
 		}
 
 		tips := []int{}
