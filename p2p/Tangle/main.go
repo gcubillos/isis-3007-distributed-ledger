@@ -384,7 +384,7 @@ func generateTangle() {
 	Tangle.lambda = 1.5
 	Tangle.alpha = 0.5
 	Tangle.h = 1
-	Tangle.tipSelection = "unWeightedMCMC"
+	Tangle.tipSelection = "weightedMCMC"
 
 	//Initial State
 	state := make(map[string]int)

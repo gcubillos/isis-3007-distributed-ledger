@@ -1,2 +1,2 @@
 #!/bin/sh
-go run main.go -l 10002 -d /ip4/192.168.0.18/tcp/10001/ipfs/QmVBJcs19HAchrHDz589fvLaiQv2oBzDGSEJ1SMnt5UTob -secio
+go run main.go -l 10002 -d /ip4/157.253.228.126/tcp/10001/ipfs/QmPcxpy6yX9V6PqtzQyh7FLHaVqzoz5QjMg8e5jgjAdFsw -secio
