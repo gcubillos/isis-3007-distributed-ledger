@@ -32,8 +32,9 @@ import (
 
 // Event represents each 'item' in the hashgraph
 type Event struct {
-	Index int
-	BPM   string
+	Index     int
+	BPM       int
+	Direccion string
 }
 
 type hashgraph struct {
@@ -43,6 +44,7 @@ type hashgraph struct {
 // Hashgraph is a series of validated Events
 var Hashgraph struct {
 	Events []Event
+	Points []int
 }
 
 var direccion string
@@ -155,6 +157,9 @@ func readData(rw *bufio.ReadWriter) {
 			mutex.Lock()
 			if len(h1.Events) > len(Hashgraph.Events) {
 				Hashgraph.Events = h1.Events
+				if h1.Events[len(h1.Events)-1].Direccion == direccion {
+					Hashgraph.Points = append(Hashgraph.Points, h1.Events[len(h1.Events)-1].Index)
+				}
 				bytes, err := json.MarshalIndent(Hashgraph, "", "  ")
 				if err != nil {
 					log.Fatal(err)
@@ -198,16 +203,23 @@ func writeData(rw *bufio.ReadWriter) {
 		}
 
 		sendData = strings.Replace(sendData, "\n", "", -1)
-		bpm := sendData
+
+		ss := strings.Fields(sendData)
+
+		dir := ss[0]
+		bpmString := ss[1]
+		bpmInt, err := strconv.Atoi(bpmString)
+
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		newEvent := generateEvent(Hashgraph.Events[len(Hashgraph.Events)-1], bpm)
+		newEvent := generateEvent(Hashgraph.Events[len(Hashgraph.Events)-1], bpmInt, dir)
 
 		if isEventValid(newEvent, Hashgraph.Events[len(Hashgraph.Events)-1]) {
 			mutex.Lock()
 			Hashgraph.Events = append(Hashgraph.Events, newEvent)
+			Hashgraph.Points = append(Hashgraph.Points, newEvent.Index)
 			mutex.Unlock()
 		}
 
@@ -228,7 +240,7 @@ func writeData(rw *bufio.ReadWriter) {
 
 func main() {
 
-	genesisEvent := Event{0, "0"}
+	genesisEvent := Event{0, 0, ""}
 
 	Hashgraph.Events = append(Hashgraph.Events, genesisEvent)
 
@@ -323,7 +335,7 @@ func isEventValid(newEvent, oldEvent Event) bool {
 
 // SHA256 hashing
 func calculateHash(event Event) string {
-	record := strconv.Itoa(event.Index) + event.BPM
+	record := strconv.Itoa(event.Index) + strconv.Itoa(event.BPM)
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
@@ -331,12 +343,13 @@ func calculateHash(event Event) string {
 }
 
 // create a new event using previous event's hash
-func generateEvent(oldEvent Event, BPM string) Event {
+func generateEvent(oldEvent Event, BPM int, dir string) Event {
 
 	var newEvent Event
 
 	newEvent.Index = oldEvent.Index + 1
 	newEvent.BPM = BPM
+	newEvent.Direccion = dir
 
 	return newEvent
 }
