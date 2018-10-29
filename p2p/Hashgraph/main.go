@@ -30,21 +30,21 @@ import (
 	gologging "github.com/whyrusleeping/go-logging"
 )
 
-// Event represents each 'item' in the hashgraph
-type Event struct {
-	Index     int
-	BPM       int
-	Direccion string
+// Block represents each 'item' in the hashgraph
+type Block struct {
+	Index        int
+	Transactions int
+	Direccion    string
 }
 
 type hashgraph struct {
-	Events []Event
+	Blocks []Block
 }
 
-// Hashgraph is a series of validated Events
+// Hashgraph is a series of validated Blocks
 var Hashgraph struct {
-	Events []Event
-	Points []int
+	Blocks []Block
+	Events map[int]int
 }
 
 var direccion string
@@ -148,17 +148,17 @@ func readData(rw *bufio.ReadWriter) {
 		if str != "\n" {
 
 			h1 := hashgraph{
-				Events: make([]Event, 0),
+				Blocks: make([]Block, 0),
 			}
 			if err := json.Unmarshal([]byte(str), &h1); err != nil {
 				log.Fatal(err)
 			}
 
 			mutex.Lock()
-			if len(h1.Events) > len(Hashgraph.Events) {
-				Hashgraph.Events = h1.Events
-				if h1.Events[len(h1.Events)-1].Direccion == direccion {
-					Hashgraph.Points = append(Hashgraph.Points, h1.Events[len(h1.Events)-1].Index)
+			if len(h1.Blocks) > len(Hashgraph.Blocks) {
+				Hashgraph.Blocks = h1.Blocks
+				if h1.Blocks[len(h1.Blocks)-1].Direccion == direccion {
+					Hashgraph.Events[h1.Blocks[len(h1.Blocks)-1].Index] = h1.Blocks[len(h1.Blocks)-1].Transactions
 				}
 				bytes, err := json.MarshalIndent(Hashgraph, "", "  ")
 				if err != nil {
@@ -214,12 +214,12 @@ func writeData(rw *bufio.ReadWriter) {
 			log.Fatal(err)
 		}
 
-		newEvent := generateEvent(Hashgraph.Events[len(Hashgraph.Events)-1], bpmInt, dir)
+		newBlock := generateBlock(Hashgraph.Blocks[len(Hashgraph.Blocks)-1], bpmInt, dir)
 
-		if isEventValid(newEvent, Hashgraph.Events[len(Hashgraph.Events)-1]) {
+		if isBlockValid(newBlock, Hashgraph.Blocks[len(Hashgraph.Blocks)-1]) {
 			mutex.Lock()
-			Hashgraph.Events = append(Hashgraph.Events, newEvent)
-			Hashgraph.Points = append(Hashgraph.Points, newEvent.Index)
+			Hashgraph.Blocks = append(Hashgraph.Blocks, newBlock)
+			Hashgraph.Events[newBlock.Index] = newBlock.Transactions
 			mutex.Unlock()
 		}
 
@@ -240,9 +240,10 @@ func writeData(rw *bufio.ReadWriter) {
 
 func main() {
 
-	genesisEvent := Event{0, 0, ""}
+	genesisBlock := Block{0, 0, ""}
 
-	Hashgraph.Events = append(Hashgraph.Events, genesisEvent)
+	Hashgraph.Blocks = append(Hashgraph.Blocks, genesisBlock)
+	Hashgraph.Events = make(map[int]int)
 
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
@@ -324,9 +325,9 @@ func main() {
 	}
 }
 
-// make sure event is valid by checking index, and comparing the hash of the previous event
-func isEventValid(newEvent, oldEvent Event) bool {
-	if oldEvent.Index+1 != newEvent.Index {
+// make sure block is valid by checking index, and comparing the hash of the previous block
+func isBlockValid(newBlock, oldBlock Block) bool {
+	if oldBlock.Index+1 != newBlock.Index {
 		return false
 	}
 
@@ -334,22 +335,22 @@ func isEventValid(newEvent, oldEvent Event) bool {
 }
 
 // SHA256 hashing
-func calculateHash(event Event) string {
-	record := strconv.Itoa(event.Index) + strconv.Itoa(event.BPM)
+func calculateHash(block Block) string {
+	record := strconv.Itoa(block.Index) + strconv.Itoa(block.Transactions)
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
 	return hex.EncodeToString(hashed)
 }
 
-// create a new event using previous event's hash
-func generateEvent(oldEvent Event, BPM int, dir string) Event {
+// create a new block using previous block's hash
+func generateBlock(oldBlock Block, Transactions int, dir string) Block {
 
-	var newEvent Event
+	var newBlock Block
 
-	newEvent.Index = oldEvent.Index + 1
-	newEvent.BPM = BPM
-	newEvent.Direccion = dir
+	newBlock.Index = oldBlock.Index + 1
+	newBlock.Transactions = Transactions
+	newBlock.Direccion = dir
 
-	return newEvent
+	return newBlock
 }
