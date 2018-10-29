@@ -34,7 +34,8 @@ import (
 type Block struct {
 	Index        int
 	Transactions int
-	Direccion    string
+	To           string
+	From         string
 }
 
 type hashgraph struct {
@@ -44,10 +45,10 @@ type hashgraph struct {
 // Hashgraph is a series of validated Blocks
 var Hashgraph struct {
 	Blocks []Block
-	Events map[int]int
+	Events []Block
 }
 
-var direccion string
+var Direccion string
 
 var mutex = &sync.Mutex{}
 
@@ -86,8 +87,8 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 	}
 
 	// Build host multiaddress
-	direccion = basicHost.ID().Pretty()
-	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", direccion))
+	Direccion = basicHost.ID().Pretty()
+	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", Direccion))
 
 	// Now we can build a full multiaddress to reach this host
 	// by encapsulating both addresses:
@@ -157,8 +158,8 @@ func readData(rw *bufio.ReadWriter) {
 			mutex.Lock()
 			if len(h1.Blocks) > len(Hashgraph.Blocks) {
 				Hashgraph.Blocks = h1.Blocks
-				if h1.Blocks[len(h1.Blocks)-1].Direccion == direccion {
-					Hashgraph.Events[h1.Blocks[len(h1.Blocks)-1].Index] = h1.Blocks[len(h1.Blocks)-1].Transactions
+				if h1.Blocks[len(h1.Blocks)-1].To == Direccion {
+					Hashgraph.Events = append(Hashgraph.Events, h1.Blocks[len(h1.Blocks)-1])
 				}
 				bytes, err := json.MarshalIndent(Hashgraph, "", "  ")
 				if err != nil {
@@ -206,7 +207,7 @@ func writeData(rw *bufio.ReadWriter) {
 
 		ss := strings.Fields(sendData)
 
-		dir := ss[0]
+		To := ss[0]
 		bpmString := ss[1]
 		bpmInt, err := strconv.Atoi(bpmString)
 
@@ -214,12 +215,12 @@ func writeData(rw *bufio.ReadWriter) {
 			log.Fatal(err)
 		}
 
-		newBlock := generateBlock(Hashgraph.Blocks[len(Hashgraph.Blocks)-1], bpmInt, dir)
+		newBlock := generateBlock(Hashgraph.Blocks[len(Hashgraph.Blocks)-1], bpmInt, To)
 
 		if isBlockValid(newBlock, Hashgraph.Blocks[len(Hashgraph.Blocks)-1]) {
 			mutex.Lock()
 			Hashgraph.Blocks = append(Hashgraph.Blocks, newBlock)
-			Hashgraph.Events[newBlock.Index] = newBlock.Transactions
+			Hashgraph.Events = append(Hashgraph.Events, newBlock)
 			mutex.Unlock()
 		}
 
@@ -240,10 +241,10 @@ func writeData(rw *bufio.ReadWriter) {
 
 func main() {
 
-	genesisBlock := Block{0, 0, ""}
+	genesisBlock := Block{0, 0, "", ""}
 
 	Hashgraph.Blocks = append(Hashgraph.Blocks, genesisBlock)
-	Hashgraph.Events = make(map[int]int)
+	Hashgraph.Events = append(Hashgraph.Events, genesisBlock)
 
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
@@ -344,13 +345,14 @@ func calculateHash(block Block) string {
 }
 
 // create a new block using previous block's hash
-func generateBlock(oldBlock Block, Transactions int, dir string) Block {
+func generateBlock(oldBlock Block, Transactions int, To string) Block {
 
 	var newBlock Block
 
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Transactions = Transactions
-	newBlock.Direccion = dir
+	newBlock.To = To
+	newBlock.From = Direccion
 
 	return newBlock
 }
