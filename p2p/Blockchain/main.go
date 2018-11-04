@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	golog "github.com/ipfs/go-log"
 	libp2p "github.com/libp2p/go-libp2p"
@@ -62,7 +63,7 @@ var Metrics struct {
 	Throughput float64
 
 	//number of bytes
-	Size int
+	Size uintptr
 }
 
 var mutex = &sync.Mutex{}
@@ -254,6 +255,7 @@ func writeData(rw *bufio.ReadWriter) {
 		mutex.Unlock()
 
 		//Print Metrics
+		Metrics.Size = unsafe.Sizeof(Blockchain)
 		fmt.Println("Throughput: ", Metrics.Throughput, " tps")
 		fmt.Println("Latency: ", Metrics.Latency, " seconds/transaction")
 		fmt.Println("Size: ", Metrics.Size, " bytes")
