@@ -264,23 +264,7 @@ func writeData(rw *bufio.ReadWriter) {
 
 func main() {
 
-	genesisBlock := Block{}
-
-	t := time.Now()
-
-	genesisBlock = Block{0, time.Unix(0, t.UnixNano()).String(), "", calculateHash(genesisBlock), "", Blockchain.Difficulty, ""}
-
-	Blockchain.Difficulty = 0
-	Blockchain.Blocks = append(Blockchain.Blocks, genesisBlock)
-
-	//Initial State
-	state := make(map[string]int)
-
-	state["Alice"] = 50
-	state["Bob"] = 50
-	state["Charles"] = 50
-
-	Blockchain.State = state
+	generateBlockchain()
 
 	//Initialize Metrics
 	Metrics.Throughput = 0
@@ -365,6 +349,41 @@ func main() {
 		select {} // hang forever
 
 	}
+}
+
+func generateBlockchain() {
+
+	//Initial State
+	state := make(map[string]int)
+	state["Alice"] = 50
+	state["Bob"] = 50
+	state["Charles"] = 50
+	Blockchain.State = state
+
+	genesisBlock := Block{}
+
+	now := time.Now()
+
+	genesisBlock = Block{0, time.Unix(0, now.UnixNano()).String(), "", calculateHash(genesisBlock), "", Blockchain.Difficulty, ""}
+
+	Blockchain.Difficulty = 0
+	mutex.Lock()
+	Blockchain.Blocks = append(Blockchain.Blocks, genesisBlock)
+	mutex.Unlock()
+
+	blockCount := 10
+
+	for len(Blockchain.Blocks) < blockCount {
+
+		newBlock := generateBlock(Blockchain.Blocks[len(Blockchain.Blocks)-1], "nothing")
+
+		if isBlockValid(newBlock, Blockchain.Blocks[len(Blockchain.Blocks)-1]) {
+			mutex.Lock()
+			Blockchain.Blocks = append(Blockchain.Blocks, newBlock)
+			mutex.Unlock()
+		}
+	}
+
 }
 
 // make sure block is valid by checking index, and comparing the hash of the previous block

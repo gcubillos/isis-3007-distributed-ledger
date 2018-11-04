@@ -405,11 +405,9 @@ func generateTangle() {
 
 	//Initial State
 	state := make(map[string]int)
-
 	state["Alice"] = 50
 	state["Bob"] = 50
 	state["Charles"] = 50
-
 	Tangle.State = state
 
 	now := time.Now()
