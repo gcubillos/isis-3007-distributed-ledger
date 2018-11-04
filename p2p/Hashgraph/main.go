@@ -48,6 +48,18 @@ var Hashgraph struct {
 	Events []Block
 }
 
+// Metrics
+var Metrics struct {
+	//transactions per second
+	Latency int
+
+	//time per 1 transaction
+	Throughput float64
+
+	//number of bytes
+	Size int
+}
+
 var Direccion string
 
 var mutex = &sync.Mutex{}
@@ -235,6 +247,11 @@ func writeData(rw *bufio.ReadWriter) {
 		rw.WriteString(fmt.Sprintf("%s\n", string(bytes)))
 		rw.Flush()
 		mutex.Unlock()
+
+		//Print Metrics
+		fmt.Println("Throughput: ", Metrics.Throughput, " tps")
+		fmt.Println("Latency: ", Metrics.Latency, " seconds/transaction")
+		fmt.Println("Size: ", Metrics.Size, " bytes")
 	}
 
 }
@@ -245,6 +262,11 @@ func main() {
 
 	Hashgraph.Blocks = append(Hashgraph.Blocks, genesisBlock)
 	Hashgraph.Events = append(Hashgraph.Events, genesisBlock)
+
+	//Initialize Metrics
+	Metrics.Throughput = 0
+	Metrics.Latency = 0
+	Metrics.Size = 0
 
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for

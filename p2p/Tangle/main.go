@@ -61,13 +61,19 @@ var Tangle struct {
 	State        map[string]int
 }
 
-var mutex = &sync.Mutex{}
+// Metrics
+var Metrics struct {
+	//transactions per second
+	Latency int
 
-//Metrics
-var initialTime int64
-var throughput int64
-var latency int64
-var size int
+	//time per 1 transaction
+	Throughput float64
+
+	//number of bytes
+	Size int
+}
+
+var mutex = &sync.Mutex{}
 
 // makeBasicHost creates a LibP2P host with a random peer ID listening on the
 // given multiaddress. It will use secio if secio is true.
@@ -292,6 +298,10 @@ func writeData(rw *bufio.ReadWriter) {
 		rw.Flush()
 		mutex.Unlock()
 
+		//Print Metrics
+		fmt.Println("Throughput: ", Metrics.Throughput, " tps")
+		fmt.Println("Latency: ", Metrics.Latency, " seconds/transaction")
+		fmt.Println("Size: ", Metrics.Size, " bytes")
 	}
 
 }
@@ -299,6 +309,11 @@ func writeData(rw *bufio.ReadWriter) {
 func main() {
 
 	generateTangle()
+
+	//Initialize Metrics
+	Metrics.Throughput = 0
+	Metrics.Latency = 0
+	Metrics.Size = 0
 
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
@@ -396,7 +411,8 @@ func generateTangle() {
 	Tangle.State = state
 
 	now := time.Now()
-	initialTime = now.UnixNano()
+	//Para medir tiempo para calcular metrics
+	//initialTime = now.UnixNano()
 	genesisTransaction0 := Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0}
 
 	mutex.Lock()
