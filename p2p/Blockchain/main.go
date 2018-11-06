@@ -40,6 +40,7 @@ type Block struct {
 	PrevHash    string
 	Difficulty  int
 	Nonce       string
+	Signature   string
 }
 
 type blockchain struct {
@@ -67,6 +68,8 @@ var Metrics struct {
 }
 
 var mutex = &sync.Mutex{}
+
+var Direccion string
 
 // makeBasicHost creates a LibP2P host with a random peer ID listening on the
 // given multiaddress. It will use secio if secio is true.
@@ -103,7 +106,8 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 	}
 
 	// Build host multiaddress
-	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", basicHost.ID().Pretty()))
+	Direccion = basicHost.ID().Pretty()
+	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", Direccion))
 
 	// Now we can build a full multiaddress to reach this host
 	// by encapsulating both addresses:
@@ -264,12 +268,9 @@ func writeData(rw *bufio.ReadWriter) {
 
 func main() {
 
-	generateBlockchain()
+	initializeMetrics()
 
-	//Initialize Metrics
-	Metrics.Throughput = 0
-	Metrics.Latency = 0
-	Metrics.Size = 0
+	generateBlockchain()
 
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
@@ -351,6 +352,23 @@ func main() {
 	}
 }
 
+func initializeMetrics() {
+	Metrics.Throughput = 0
+	Metrics.Latency = 0
+	Metrics.Size = 0
+}
+
+func calculateTime() {
+	now := time.Now()
+	start := now.UnixNano()
+
+	now = time.Now()
+	finish := now.UnixNano()
+
+	totalTime := finish - start
+	fmt.Println("TOTAL TIME: ", totalTime)
+}
+
 func generateBlockchain() {
 
 	//Initial State
@@ -364,7 +382,7 @@ func generateBlockchain() {
 
 	now := time.Now()
 
-	genesisBlock = Block{0, time.Unix(0, now.UnixNano()).String(), "", calculateHash(genesisBlock), "", Blockchain.Difficulty, ""}
+	genesisBlock = Block{0, time.Unix(0, now.UnixNano()).String(), "", calculateHash(genesisBlock), "", Blockchain.Difficulty, "", ""}
 
 	Blockchain.Difficulty = 0
 	mutex.Lock()
@@ -407,7 +425,7 @@ func isBlockValid(newBlock, oldBlock Block) bool {
 func calculateHash(block Block) string {
 	// record := strconv.Itoa(block.Index) + block.Timestamp +
 	// 	strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
-	record := strconv.Itoa(block.Index) + block.Timestamp + block.PrevHash + block.Nonce
+	record := strconv.Itoa(block.Index) + block.Timestamp + block.PrevHash + block.Nonce + block.Signature
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
@@ -425,8 +443,8 @@ func generateBlock(oldBlock Block, Transaction string) Block {
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Transaction = Transaction
 	newBlock.PrevHash = oldBlock.Hash
-
 	newBlock.Difficulty = Blockchain.Difficulty
+	newBlock.Signature = Direccion
 
 	for i := 0; ; i++ {
 		hex := fmt.Sprintf("%x", i)

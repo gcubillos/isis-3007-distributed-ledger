@@ -38,6 +38,7 @@ type Transaction struct {
 	TimeString string
 	Weight     int
 	CumWeight  int
+	Signature  string
 }
 
 type Link struct {
@@ -76,6 +77,8 @@ var Metrics struct {
 
 var mutex = &sync.Mutex{}
 
+var Direccion string
+
 // makeBasicHost creates a LibP2P host with a random peer ID listening on the
 // given multiaddress. It will use secio if secio is true.
 func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error) {
@@ -111,7 +114,8 @@ func makeBasicHost(listenPort int, secio bool, randseed int64) (host.Host, error
 	}
 
 	// Build host multiaddress
-	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", basicHost.ID().Pretty()))
+	Direccion = basicHost.ID().Pretty()
+	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", Direccion))
 
 	// Now we can build a full multiaddress to reach this host
 	// by encapsulating both addresses:
@@ -413,7 +417,7 @@ func generateTangle() {
 	now := time.Now()
 	//Para medir tiempo para calcular metrics
 	//initialTime = now.UnixNano()
-	genesisTransaction0 := Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0}
+	genesisTransaction0 := Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0, ""}
 
 	mutex.Lock()
 	Tangle.Transactions = append(Tangle.Transactions, genesisTransaction0)
@@ -444,7 +448,8 @@ func generateTangle() {
 			myTime,
 			time.Unix(0, myTime*1000000).String(),
 			1,
-			0}
+			0,
+			""}
 
 		mutex.Lock()
 		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
@@ -468,7 +473,7 @@ func generateTangle() {
 		}
 
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
-		fmt.Println("Initial Tips: ", tips)
+		//fmt.Println("Initial Tips: ", tips)
 
 		mutex.Lock()
 		if len(tips) > 0 {
@@ -505,6 +510,7 @@ func generateTransaction(lastTransaction Transaction, Operation string) Transact
 	newTransaction.TimeInt = now.UnixNano() / 1000000
 	newTransaction.TimeString = time.Unix(0, now.UnixNano()).String()
 	newTransaction.Weight = 1
+	newTransaction.Signature = Direccion
 
 	return newTransaction
 }
