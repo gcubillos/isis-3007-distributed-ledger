@@ -378,3 +378,89 @@ func generateBlock(oldBlock Block, Transactions int, To string) Block {
 
 	return newBlock
 }
+
+// func divideRounds() {
+// 	for _, x := range Hashgraph.Events {
+
+// 		// r ← max round of parents of x (or 1 if none exist)
+// 		r := 1
+
+// 		//if x can strongly see more than 2n/3 round r witnesses
+// 		if stronglySee(x, r) {
+// 			x.Round = r + 1
+// 		} else {
+// 			x.Round = r
+// 		}
+
+// 		x.Witness = x.selfParent == nil || x.Round > x.selfParent.Round
+// 	}
+// }
+
+// func decideFame() {
+// 	//for each event x in order from earlier rounds to later
+// 	for _, x := range Hashgraph.Events {
+// 		x.Famous = "UNDECIDED"
+
+// 		//for each event y in order from earlier rounds to later
+// 		for _, x := range Hashgraph.Events {
+// 			if x.Witness && y.Witness && y.Round > x.Round {
+// 				d := y.Round - x.Round
+
+// 				//s ← the set of witness events in round y.round-1 that y can strongly see
+// 				s := 1
+
+// 				//v ← majority vote in s (is TRUE for a tie)
+// 				v := 1
+
+// 				//t ← number of events in s with a vote of v
+// 				t := 1
+
+// 				if d == 1 { // first round of the election
+// 					//y.vote ← can y see x?
+// 					y.Vote = canSee(y, x)
+// 				} else {
+// 					if d mod c > 0 { // this is a normal round
+// 						if t > 2*n/3 { // if supermajority, then decide
+// 							x.Famous = v
+// 							y.vote = v
+// 							//break out of the y loop
+// 						} else { //else, just vote
+// 							y.vote = v
+// 						}
+// 					} else { // this is a coin round
+// 						if t > 2*n/3 { //if supermajority, then vote
+// 							y.vote = v
+// 						} else { // else flip a coin
+// 							//y.vote ← middle bit of y.signature
+// 							y.vote = 1
+// 						}
+// 					}
+// 				}
+
+// 			}
+// 		}
+// 	}
+// }
+
+// func findOrder() {
+// 	for _, x := range Hashgraph.Events {
+// 		//if there is a round r such that there is no event y in or before round r that has y.witness=TRUE and y.famous=UNDECIDED
+// 		//and x is an ancestor of every round r unique famous witness
+// 		//and this is not true of any round earlier than r then
+// 		if something1 && something2 && something3 {
+// 			x.roundReceived = r
+// 			//s ← set of each event z such that z is a self-ancestor of a round r unique famous witness, and x is an ancestor of z but not of the self-parent of z
+// 			s := 1
+
+// 			// x.consensusTimestamp ← median of the timestamps of all the events in s
+// 			x := 1
+
+// 		}
+// 	}
+
+// 	//return all events that have roundReceived not UNDECIDED,
+// 	//sorted by roundReceived,
+// 	//then sorted by consensusTimestamp ,
+// 	//then sorted by whitened signature
+// 	return allEvents
+// }
