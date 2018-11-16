@@ -426,7 +426,8 @@ func generateTangle() {
 	now := time.Now()
 	//Para medir tiempo para calcular metrics
 	//initialTime = now.UnixNano()
-	genesisTransaction = Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0, "", calculateHash(genesisTransaction), "", ""}
+	genesisTransaction = Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0, "", "", "", ""}
+	genesisTransaction.Hash = calculateHash(genesisTransaction)
 
 	mutex.Lock()
 	Tangle.Transactions = append(Tangle.Transactions, genesisTransaction)
@@ -461,9 +462,11 @@ func generateTangle() {
 			1,
 			0,
 			"",
-			calculateHash(newTransaction),
+			"",
 			"",
 			""}
+
+		newTransaction.Hash = calculateHash(newTransaction)
 
 		mutex.Lock()
 		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
@@ -527,6 +530,7 @@ func generateTransaction(lastTransaction Transaction, Operation string) Transact
 	newTransaction.TimeString = time.Unix(0, now.UnixNano()).String()
 	newTransaction.Weight = 1
 	newTransaction.Signature = Direccion
+	newTransaction.Hash = calculateHash(newTransaction)
 
 	return newTransaction
 }
@@ -535,8 +539,7 @@ func generateTransaction(lastTransaction Transaction, Operation string) Transact
 func calculateHash(transaction Transaction) string {
 	// record := strconv.Itoa(block.Index) + block.Timestamp +
 	// 	strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
-	record := strconv.Itoa(transaction.Index) + transaction.TimeString +
-		transaction.Hash_App1 + transaction.Hash_App2 + transaction.Signature
+	record := strconv.Itoa(transaction.Index) + transaction.TimeString
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
