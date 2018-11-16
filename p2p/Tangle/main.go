@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -39,17 +41,14 @@ type Transaction struct {
 	Weight     int
 	CumWeight  int
 	Signature  string
+	Hash       string
+	Hash_App1  string
+	Hash_App2  string
 }
 
 type Link struct {
 	Target int
 	Source int
-}
-
-type tangle struct {
-	Transactions []Transaction
-	Links        []Link
-	State        map[string]int
 }
 
 // Tangle is a DAG of Transactions
@@ -60,6 +59,12 @@ var Tangle struct {
 	alpha        float32
 	h            int64
 	tipSelection string
+	State        map[string]int
+}
+
+type tangle struct {
+	Transactions []Transaction
+	Links        []Link
 	State        map[string]int
 }
 
@@ -274,15 +279,17 @@ func writeData(rw *bufio.ReadWriter) {
 		tips := getTips(Tangle.tipSelection, candidates, candidateLinks)
 
 		mutex.Lock()
-		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
 		if len(tips) > 0 {
+			newTransaction.Hash_App1 = calculateHash(Tangle.Transactions[tips[0]])
 			newLink := generateLink(Tangle.Transactions[tips[0]], newTransaction)
 			Tangle.Links = append(Tangle.Links, newLink)
 			if len(tips) > 1 && tips[0] != tips[1] {
+				newTransaction.Hash_App2 = calculateHash(Tangle.Transactions[tips[1]])
 				newLink := generateLink(Tangle.Transactions[tips[1]], newTransaction)
 				Tangle.Links = append(Tangle.Links, newLink)
 			}
 		}
+		Tangle.Transactions = append(Tangle.Transactions, newTransaction)
 		mutex.Unlock()
 
 		//END: New way of forming Links
@@ -414,13 +421,15 @@ func generateTangle() {
 	state["Charles"] = 50
 	Tangle.State = state
 
+	genesisTransaction := Transaction{}
+
 	now := time.Now()
 	//Para medir tiempo para calcular metrics
 	//initialTime = now.UnixNano()
-	genesisTransaction0 := Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0, ""}
+	genesisTransaction = Transaction{0, "genesis", 0, now.UnixNano() / 1000000, time.Unix(0, now.UnixNano()).String(), 1, 0, "", calculateHash(genesisTransaction), "", ""}
 
 	mutex.Lock()
-	Tangle.Transactions = append(Tangle.Transactions, genesisTransaction0)
+	Tangle.Transactions = append(Tangle.Transactions, genesisTransaction)
 	mutex.Unlock()
 
 	transactionCount := 10
@@ -441,7 +450,9 @@ func generateTangle() {
 		iotaTime = iotaTime + iotaDelay
 		//END: IOTA stuff
 
-		newTransaction := Transaction{
+		newTransaction := Transaction{}
+
+		newTransaction = Transaction{
 			len(Tangle.Transactions),
 			"nothing",
 			iotaTime,
@@ -449,6 +460,9 @@ func generateTangle() {
 			time.Unix(0, myTime*1000000).String(),
 			1,
 			0,
+			"",
+			calculateHash(newTransaction),
+			"",
 			""}
 
 		mutex.Lock()
@@ -477,9 +491,11 @@ func generateTangle() {
 
 		mutex.Lock()
 		if len(tips) > 0 {
+			t.Hash_App1 = calculateHash(Tangle.Transactions[tips[0]])
 			newLink := generateLink(Tangle.Transactions[tips[0]], t)
 			Tangle.Links = append(Tangle.Links, newLink)
 			if len(tips) > 1 && tips[0] != tips[1] {
+				t.Hash_App2 = calculateHash(Tangle.Transactions[tips[1]])
 				newLink := generateLink(Tangle.Transactions[tips[1]], t)
 				Tangle.Links = append(Tangle.Links, newLink)
 			}
@@ -513,6 +529,18 @@ func generateTransaction(lastTransaction Transaction, Operation string) Transact
 	newTransaction.Signature = Direccion
 
 	return newTransaction
+}
+
+// SHA256 hashing
+func calculateHash(transaction Transaction) string {
+	// record := strconv.Itoa(block.Index) + block.Timestamp +
+	// 	strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
+	record := strconv.Itoa(transaction.Index) + transaction.TimeString +
+		transaction.Hash_App1 + transaction.Hash_App2 + transaction.Signature
+	h := sha256.New()
+	h.Write([]byte(record))
+	hashed := h.Sum(nil)
+	return hex.EncodeToString(hashed)
 }
 
 func generateLink(target Transaction, source Transaction) Link {

@@ -43,16 +43,16 @@ type Block struct {
 	Signature   string
 }
 
-type blockchain struct {
-	Blocks []Block
-	State  map[string]int
-}
-
 // Blockchain is a series of validated Blocks
 var Blockchain struct {
 	Blocks     []Block
 	State      map[string]int
 	Difficulty int
+}
+
+type blockchain struct {
+	Blocks []Block
+	State  map[string]int
 }
 
 // Metrics
@@ -425,7 +425,8 @@ func isBlockValid(newBlock, oldBlock Block) bool {
 func calculateHash(block Block) string {
 	// record := strconv.Itoa(block.Index) + block.Timestamp +
 	// 	strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
-	record := strconv.Itoa(block.Index) + block.Timestamp + block.PrevHash + block.Nonce + block.Signature
+	record := strconv.Itoa(block.Index) + block.Timestamp + block.PrevHash +
+		block.Nonce + block.Signature
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
