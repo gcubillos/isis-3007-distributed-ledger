@@ -76,10 +76,17 @@ func main() {
 			continue
 		}
 
-		log.Info().Msgf("<%s> %s", net.Address, input)
+		ss := strings.Fields(input)
+
+		myRecipient := ss[0]
+		myMsg := ss[1]
 
 		ctx := network.WithSignMessage(context.Background(), true)
-		net.Broadcast(ctx, &messages.ChatMessage{Message: input})
+
+		if client, err := net.Client("tcp://127.0.01:"+myRecipient); err == nil{
+			client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
+			log.Info().Msgf("<%s> %s", net.Address, myMsg)
+		}
 	}
 
 }
