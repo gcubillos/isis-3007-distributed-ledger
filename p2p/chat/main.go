@@ -6,6 +6,7 @@ import (
 	"flag"
 	"os"
 	"strings"
+	"strconv"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -20,7 +21,19 @@ type ChatPlugin struct{ *network.Plugin }
 func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 	switch msg := ctx.Message().(type) {
 	case *messages.ChatMessage:
-		log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, msg.Message)
+		log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, "Received: "+msg.Message)
+		
+		myAmount, err := strconv.Atoi(msg.Message)
+		if err != nil {
+			// handle error
+		}
+
+		//update balance
+		ctx.Network().Balance = ctx.Network().Balance + myAmount
+			
+		log.Info().
+			Int("balance", ctx.Network().Balance).
+			Msg("Balance updated: ")
 	}
 
 	return nil
@@ -41,8 +54,8 @@ func main() {
 
 	keys := ed25519.RandomKeyPair()
 
-	log.Info().Msgf("Private Key: %s", keys.PrivateKeyHex())
-	log.Info().Msgf("Public Key: %s", keys.PublicKeyHex())
+	// log.Info().Msgf("Private Key: %s", keys.PrivateKeyHex())
+	// log.Info().Msgf("Public Key: %s", keys.PublicKeyHex())
 
 	opcode.RegisterMessageType(opcode.Opcode(1000), &messages.ChatMessage{})
 	builder := network.NewBuilder()
@@ -80,12 +93,24 @@ func main() {
 
 		myRecipient := ss[0]
 		myMsg := ss[1]
+		myAmount, err := strconv.Atoi(myMsg)
+		if err != nil {
+			// handle error
+		}
 
 		ctx := network.WithSignMessage(context.Background(), true)
 
 		if client, err := net.Client("tcp://127.0.01:"+myRecipient); err == nil{
 			client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
-			log.Info().Msgf("<%s> %s", net.Address, myMsg)
+			log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
+
+			//update balance
+			net.Balance = net.Balance - myAmount
+			
+			log.Info().
+				Int("balance", net.Balance).
+				Msg("Balance updated: ")
+
 		}
 	}
 
