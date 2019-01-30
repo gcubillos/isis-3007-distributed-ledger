@@ -7,6 +7,9 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	
+	net2 "net"
+	log2 "log"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -42,7 +45,7 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 func main() {
 	// process other flags
 	portFlag := flag.Int("port", 3000, "port to listen to")
-	hostFlag := flag.String("host", "localhost", "host to listen to")
+	hostFlag := flag.String("host", getOutboundIP(), "host to listen to")
 	protocolFlag := flag.String("protocol", "tcp", "protocol to use (kcp/tcp)")
 	peersFlag := flag.String("peers", "", "peers to connect to")
 	flag.Parse()
@@ -100,7 +103,7 @@ func main() {
 
 		ctx := network.WithSignMessage(context.Background(), true)
 
-		if client, err := net.Client("tcp://127.0.01:"+myRecipient); err == nil{
+		if client, err := net.Client(myRecipient); err == nil{
 			client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
 			log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
 
@@ -114,4 +117,16 @@ func main() {
 		}
 	}
 
+}
+
+func getOutboundIP() string {
+	conn, err := net2.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log2.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net2.UDPAddr)
+
+	return localAddr.IP.String()
 }
