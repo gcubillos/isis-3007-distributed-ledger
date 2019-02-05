@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"strconv"
+	"fmt"
 	
 	net2 "net"
 	log2 "log"
@@ -20,6 +21,12 @@ import (
 )
 
 type ChatPlugin struct{ *network.Plugin }
+
+type block struct {
+	Index       int
+	Type		string
+	Amount		string
+}
 
 func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 	switch msg := ctx.Message().(type) {
@@ -37,6 +44,12 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 		log.Info().
 			Int("balance", ctx.Network().Balance).
 			Msg("Balance updated: ")
+
+		//update blockchain
+		newBlock := generateBlock(ctx.Network().Blockchain[len(ctx.Network().Blockchain)-1], "receive", myAmount)
+		ctx.Network().Blockchain = append(ctx.Network().Blockchain, newBlock)
+
+		fmt.Printf("%+v\n", ctx.Network().Blockchain)
 	}
 
 	return nil
@@ -114,6 +127,11 @@ func main() {
 				Int("balance", net.Balance).
 				Msg("Balance updated: ")
 
+			//update blockchain
+			newBlock := generateBlock(net.Blockchain[len(net.Blockchain)-1], "send" ,myAmount)
+			net.Blockchain = append(net.Blockchain, newBlock)
+
+			fmt.Printf("%+v\n", net.Blockchain)
 		}
 	}
 
@@ -129,4 +147,23 @@ func getOutboundIP() string {
 	localAddr := conn.LocalAddr().(*net2.UDPAddr)
 
 	return localAddr.IP.String()
+}
+
+// create a new block using previous block's hash
+func generateBlock(oldBlock network.Block, typeOfTransaction string, amount int) network.Block {
+
+	var newBlock network.Block
+
+	newBlock.Index = oldBlock.Index + 1
+
+	if typeOfTransaction == "send" {
+		newBlock.Balance = oldBlock.Balance - amount	
+	} else {
+		newBlock.Balance = oldBlock.Balance + amount 
+	}
+	
+	newBlock.Type = typeOfTransaction
+	newBlock.Amount = amount
+	
+	return newBlock
 }
