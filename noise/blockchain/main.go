@@ -4,12 +4,17 @@ import (
 	"bufio"
 	"context"
 	"flag"
-	"fmt"
 	log2 "log"
 	net2 "net"
 	"os"
 	"strconv"
 	"strings"
+	"time"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"sync"
+	"fmt"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -21,27 +26,41 @@ import (
 
 type ChatPlugin struct{ *network.Plugin }
 
-type block struct {
-	Index  int
-	Type   string
-	Amount string
+var mutex = &sync.Mutex{}
+
+type blockchain struct {
+	Blocks []network.Block
+	State  map[string]int
 }
 
 func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 	switch msg := ctx.Message().(type) {
 	case *messages.ChatMessage:
-		log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, "Received: "+msg.Message)
-
-		myAmount, err := strconv.Atoi(msg.Message)
-		if err != nil {
-			// handle error
+		//log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, msg.Message)
+		b1 := blockchain{
+			Blocks: make([]network.Block, 0),
+			State:  make(map[string]int),
 		}
 
-		//update blockchain
-		newBlock := generateBlock(ctx.Network().Blockchain[len(ctx.Network().Blockchain)-1], "receive", myAmount)
-		ctx.Network().Blockchain = append(ctx.Network().Blockchain, newBlock)
+		if err := json.Unmarshal([]byte(msg.Message), &b1); err != nil {
+			log2.Fatal(err)
+		}
+		
+		mutex.Lock()
+			if len(b1.Blocks) > len(ctx.Network().Blockchain.Blocks) {
+				ctx.Network().Blockchain.Blocks = b1.Blocks
+				ctx.Network().Blockchain.State = b1.State
+				bytes, err := json.MarshalIndent(ctx.Network().Blockchain, "", "  ")
+				if err != nil {
 
-		fmt.Printf("%+v\n", ctx.Network().Blockchain)
+					log2.Fatal(err)
+				}
+				// Green console color: 	\x1b[32m
+				// Reset console color: 	\x1b[0m
+				fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
+			}
+			mutex.Unlock()
+
 	}
 
 	return nil
@@ -89,6 +108,7 @@ func main() {
 	}
 
 	reader := bufio.NewReader(os.Stdin)
+	
 	for {
 		input, _ := reader.ReadString('\n')
 
@@ -99,25 +119,33 @@ func main() {
 
 		ss := strings.Fields(input)
 
-		myRecipient := ss[0]
-		myMsg := ss[1]
-		myAmount, err := strconv.Atoi(myMsg)
+		amountString := ss[1]
+		amountInt, err := strconv.Atoi(amountString)
 		if err != nil {
-			// handle error
+			log2.Fatal(err)
+		}
+
+		from := ss[3]
+		to := ss[5]
+
+		net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
+		net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
+
+		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], input, net.Address)
+
+		if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
+			mutex.Lock()
+			net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
+			mutex.Unlock()
+		}
+
+		bytes, err := json.Marshal(net.Blockchain)
+		if err != nil {
+			log2.Println(err)
 		}
 
 		ctx := network.WithSignMessage(context.Background(), true)
-
-		if client, err := net.Client(myRecipient); err == nil {
-			client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
-			log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
-
-			//update blockchain
-			newBlock := generateBlock(net.Blockchain[len(net.Blockchain)-1], "send", myAmount)
-			net.Blockchain = append(net.Blockchain, newBlock)
-
-			fmt.Printf("%+v\n", net.Blockchain)
-		}
+		net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
 	}
 
 }
@@ -135,20 +163,62 @@ func getOutboundIP() string {
 }
 
 // create a new block using previous block's hash
-func generateBlock(oldBlock network.Block, typeOfTransaction string, amount int) network.Block {
+func generateBlock(oldBlock network.Block, Transaction string, address string) network.Block {
 
 	var newBlock network.Block
 
-	newBlock.Index = oldBlock.Index + 1
+	t := time.Now()
+	newBlock.Timestamp = time.Unix(0, t.UnixNano()).String()
 
-	if typeOfTransaction == "send" {
-		newBlock.Balance = oldBlock.Balance - amount
-	} else {
-		newBlock.Balance = oldBlock.Balance + amount
+	newBlock.Index = oldBlock.Index + 1
+	newBlock.Transaction = Transaction
+	newBlock.PrevHash = oldBlock.Hash
+	newBlock.Signature = address
+
+	for i := 0; ; i++ {
+		if !isHashValid(calculateHash(newBlock), 0) {
+			//fmt.Println(calculateHash(newBlock), " do more work!")
+			time.Sleep(time.Second)
+			continue
+		} else {
+			//fmt.Println(calculateHash(newBlock), " work done!")
+			newBlock.Hash = calculateHash(newBlock)
+			break
+		}
+
+	}
+	return newBlock
+}
+
+func isHashValid(hash string, difficulty int) bool {
+	prefix := strings.Repeat("0", difficulty)
+	return strings.HasPrefix(hash, prefix)
+}
+
+// SHA256 hashing
+func calculateHash(block network.Block) string {
+	// record := strconv.Itoa(block.Index) + block.Timestamp +
+	// 	strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
+	record := strconv.Itoa(block.Index) + block.Timestamp + block.PrevHash + block.Signature
+	h := sha256.New()
+	h.Write([]byte(record))
+	hashed := h.Sum(nil)
+	return hex.EncodeToString(hashed)
+}
+
+// make sure block is valid by checking index, and comparing the hash of the previous block
+func isBlockValid(newBlock, oldBlock network.Block) bool {
+	if oldBlock.Index+1 != newBlock.Index {
+		return false
 	}
 
-	newBlock.Type = typeOfTransaction
-	newBlock.Amount = amount
+	if oldBlock.Hash != newBlock.PrevHash {
+		return false
+	}
 
-	return newBlock
+	if calculateHash(newBlock) != newBlock.Hash {
+		return false
+	}
+
+	return true
 }
