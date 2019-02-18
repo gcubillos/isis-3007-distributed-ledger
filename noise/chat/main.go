@@ -6,6 +6,8 @@ import (
 	"flag"
 	"os"
 	"strings"
+	"fmt"
+	"strconv"
 	log2 "log"
 	net2 "net"
 
@@ -43,8 +45,8 @@ func main() {
 
 	keys := ed25519.RandomKeyPair()
 
-	log.Info().Msgf("Private Key: %s", keys.PrivateKeyHex())
-	log.Info().Msgf("Public Key: %s", keys.PublicKeyHex())
+	// log.Info().Msgf("Private Key: %s", keys.PrivateKeyHex())
+	// log.Info().Msgf("Public Key: %s", keys.PublicKeyHex())
 
 	opcode.RegisterMessageType(opcode.Opcode(1000), &messages.ChatMessage{})
 	builder := network.NewBuilder()
@@ -57,7 +59,7 @@ func main() {
 	// Add custom chat plugin.
 	builder.AddPlugin(new(ChatPlugin))
 
-	net, err := builder.Build("chat")
+	net, err := builder.Build()
 	if err != nil {
 		log.Fatal().Err(err)
 		return
@@ -69,7 +71,20 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
+	fmt.Print("Press 'Enter' to continue...")
+  	bufio.NewReader(os.Stdin).ReadBytes('\n') 
+
+	if(net.Address == "tcp://10.150.0.4:3000") {
+		for i := 0; i < 50; i++ {
+			myMessage := "message "+strconv.Itoa(i)
+			log.Info().Msgf("<%s> %s", net.Address, myMessage)
+			ctx := network.WithSignMessage(context.Background(), true)
+			net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+		}
+	}
+
 	reader := bufio.NewReader(os.Stdin)
+
 	for {
 		input, _ := reader.ReadString('\n')
 
@@ -79,7 +94,6 @@ func main() {
 		}
 
 		log.Info().Msgf("<%s> %s", net.Address, input)
-
 		ctx := network.WithSignMessage(context.Background(), true)
 		net.Broadcast(ctx, &messages.ChatMessage{Message: input})
 	}

@@ -107,6 +107,38 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
+	fmt.Print("Press 'Enter' to continue...")
+	bufio.NewReader(os.Stdin).ReadBytes('\n') 
+
+	if net.Address == "tcp://192.168.0.18:3001" {
+		for i := 0; i < 5; i++ {
+			amountInt:= 10
+	
+			from := "Bob"
+			to := "Alice"
+	
+			net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
+			net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
+	
+			newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address)
+	
+			if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
+				mutex.Lock()
+				net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
+				mutex.Unlock()
+			}
+	
+			bytes, err := json.Marshal(net.Blockchain)
+			if err != nil {
+				log2.Println(err)
+			}
+	
+			ctx := network.WithSignMessage(context.Background(), true)
+			net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
+
+		}
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	
 	for {

@@ -82,7 +82,36 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
+	fmt.Print("Press 'Enter' to continue...")
+  	bufio.NewReader(os.Stdin).ReadBytes('\n') 
+
+	if net.Address == "tcp://192.168.0.18:3001" {
+		for i := 0; i < 50; i++ {
+
+			myRecipient := "tcp://192.168.0.18:3000"
+			myMsg := "10"
+			myAmount, err := strconv.Atoi(myMsg)
+			if err != nil {
+				// handle error
+			}
+
+			ctx := network.WithSignMessage(context.Background(), true)
+
+			if client, err := net.Client(myRecipient); err == nil {
+				client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
+				log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
+
+				//update chain
+				newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
+				net.Chain = append(net.Chain, newCube)
+
+				fmt.Printf("%+v\n", net.Chain)
+			}
+		}
+	}
+
 	reader := bufio.NewReader(os.Stdin)
+
 	for {
 		input, _ := reader.ReadString('\n')
 

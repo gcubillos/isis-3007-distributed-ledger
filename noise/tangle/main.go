@@ -3,20 +3,20 @@ package main
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"flag"
+	"fmt"
 	log2 "log"
+	"math"
+	mrand "math/rand"
 	net2 "net"
 	"os"
 	"strconv"
 	"strings"
-	"time"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"sync"
-	"fmt"
-	"math"
-	mrand "math/rand"
+	"time"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -49,25 +49,25 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 		if err := json.Unmarshal([]byte(msg.Message), &t1); err != nil {
 			log2.Fatal(err)
 		}
-		
+
 		mutex.Lock()
-			if len(t1.Transactions) > len(ctx.Network().Tangle.Transactions) &&
-				len(t1.Links) > len(ctx.Network().Tangle.Links) {
-				ctx.Network().Tangle.Transactions = t1.Transactions
-				ctx.Network().Tangle.Links = t1.Links
-				ctx.Network().Tangle.State = t1.State
+		if len(t1.Transactions) > len(ctx.Network().Tangle.Transactions) &&
+			len(t1.Links) > len(ctx.Network().Tangle.Links) {
+			ctx.Network().Tangle.Transactions = t1.Transactions
+			ctx.Network().Tangle.Links = t1.Links
+			ctx.Network().Tangle.State = t1.State
 
-				bytes, err := json.MarshalIndent(ctx.Network().Tangle, "", "  ")
-				if err != nil {
+			bytes, err := json.MarshalIndent(ctx.Network().Tangle, "", "  ")
+			if err != nil {
 
-					log2.Fatal(err)
-				}
-				// Green console color: 	\x1b[32m
-				// Reset console color: 	\x1b[0m
-				fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
-
+				log2.Fatal(err)
 			}
-			mutex.Unlock()
+			// Green console color: 	\x1b[32m
+			// Reset console color: 	\x1b[0m
+			fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
+
+		}
+		mutex.Unlock()
 
 	}
 
@@ -115,8 +115,66 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
+	fmt.Print("Press 'Enter' to continue...")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
+
+	if net.Address == "tcp://192.168.0.18:3001" {
+		for i := 0; i < 5; i++ {
+
+			amountInt := 10
+
+			from := "Bob"
+			to := "Alice"
+
+			net.Tangle.State[from] = net.Tangle.State[from] - amountInt
+			net.Tangle.State[to] = net.Tangle.State[to] + amountInt
+
+			newTransaction := generateTransaction(net.Tangle.Transactions[len(net.Tangle.Transactions)-1], "send 10 from Bob to Alice", net.Address)
+
+			//START: New way of forming Links
+			candidates := []int{}
+			for _, c := range net.Tangle.Transactions {
+				if newTransaction.TimeInt-net.Tangle.H > c.TimeInt {
+					candidates = append(candidates, c.Index)
+				}
+			}
+
+			candidateLinks := []network.Link{}
+			for _, l := range net.Tangle.Links {
+				if newTransaction.TimeInt-net.Tangle.H > net.Tangle.Transactions[l.Source].TimeInt {
+					candidateLinks = append(candidateLinks, l)
+				}
+			}
+
+			tips := getTips(net.Tangle.TipSelection, candidates, candidateLinks, net.Tangle)
+
+			mutex.Lock()
+			if len(tips) > 0 {
+				newTransaction.Hash_App1 = calculateHash(net.Tangle.Transactions[tips[0]])
+				newLink := generateLink(net.Tangle.Transactions[tips[0]], newTransaction)
+				net.Tangle.Links = append(net.Tangle.Links, newLink)
+				if len(tips) > 1 && tips[0] != tips[1] {
+					newTransaction.Hash_App2 = calculateHash(net.Tangle.Transactions[tips[1]])
+					newLink := generateLink(net.Tangle.Transactions[tips[1]], newTransaction)
+					net.Tangle.Links = append(net.Tangle.Links, newLink)
+				}
+			}
+			net.Tangle.Transactions = append(net.Tangle.Transactions, newTransaction)
+			mutex.Unlock()
+
+			bytes, err := json.Marshal(net.Tangle)
+			if err != nil {
+				log2.Println(err)
+			}
+
+			ctx := network.WithSignMessage(context.Background(), true)
+			net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
+
+		}
+	}
+
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	for {
 		input, _ := reader.ReadString('\n')
 
@@ -500,4 +558,3 @@ func visit(transaction network.Transaction, unvisited []network.Transaction, chi
 
 	return result, newUnvisited
 }
-
