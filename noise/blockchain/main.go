@@ -3,18 +3,18 @@ package main
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"flag"
+	"fmt"
 	log2 "log"
 	net2 "net"
 	"os"
 	"strconv"
 	"strings"
-	"time"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"sync"
-	"fmt"
+	"time"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -45,24 +45,23 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 		if err := json.Unmarshal([]byte(msg.Message), &b1); err != nil {
 			log2.Fatal(err)
 		}
-		
+
 		mutex.Lock()
-			if len(b1.Blocks) > len(ctx.Network().Blockchain.Blocks) {
-				ctx.Network().Blockchain.Blocks = b1.Blocks
-				ctx.Network().Blockchain.State = b1.State
-				bytes, err := json.MarshalIndent(ctx.Network().Blockchain, "", "  ")
-				if err != nil {
+		if len(b1.Blocks) > len(ctx.Network().Blockchain.Blocks) {
+			ctx.Network().Blockchain.Blocks = b1.Blocks
+			ctx.Network().Blockchain.State = b1.State
+			// bytes, err := json.MarshalIndent(ctx.Network().Blockchain, "", "  ")
+			// if err != nil {
 
-					log2.Fatal(err)
-				}
-				// Green console color: 	\x1b[32m
-				// Reset console color: 	\x1b[0m
-				fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
-			}
-			mutex.Unlock()
-
+			// 	log2.Fatal(err)
+			// }
+			// // Green console color: 	\x1b[32m
+			// // Reset console color: 	\x1b[0m
+			// fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
+			fmt.Println("# Transactions: ", len(ctx.Network().Blockchain.Blocks))
+		}
+		mutex.Unlock()
 	}
-
 	return nil
 }
 
@@ -107,32 +106,41 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
-	fmt.Print("Press 'Enter' to continue...")
-	bufio.NewReader(os.Stdin).ReadBytes('\n') 
+	if net.Address == "tcp://192.168.50.36:3001" {
 
-	if net.Address == "tcp://192.168.0.18:3001" {
-		for i := 0; i < 5; i++ {
-			amountInt:= 10
-	
+		fmt.Print("Press 'Enter' to continue...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+
+		timer := time.NewTimer(time.Second)
+
+		done := false
+		go func() {
+			<-timer.C
+			done = true
+		}()
+
+		for !done {
+			amountInt := 10
+
 			from := "Bob"
 			to := "Alice"
-	
+
 			net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
 			net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
-	
+
 			newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address)
-	
+
 			if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
 				mutex.Lock()
 				net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
 				mutex.Unlock()
 			}
-	
+
 			bytes, err := json.Marshal(net.Blockchain)
 			if err != nil {
 				log2.Println(err)
 			}
-	
+
 			ctx := network.WithSignMessage(context.Background(), true)
 			net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
 
@@ -140,7 +148,7 @@ func main() {
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	for {
 		input, _ := reader.ReadString('\n')
 

@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"context"
 	"flag"
-	"os"
-	"strings"
 	"fmt"
-	"strconv"
 	log2 "log"
 	net2 "net"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -59,7 +60,7 @@ func main() {
 	// Add custom chat plugin.
 	builder.AddPlugin(new(ChatPlugin))
 
-	net, err := builder.Build()
+	net, err := builder.Build("chat")
 	if err != nil {
 		log.Fatal().Err(err)
 		return
@@ -71,16 +72,28 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
-	fmt.Print("Press 'Enter' to continue...")
-  	bufio.NewReader(os.Stdin).ReadBytes('\n') 
+	if net.Address == "tcp://192.168.50.36:3001" {
 
-	if(net.Address == "tcp://10.150.0.4:3000") {
-		for i := 0; i < 50; i++ {
-			myMessage := "message "+strconv.Itoa(i)
+		fmt.Print("Press 'Enter' to continue...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+
+		timer := time.NewTimer(time.Second)
+
+		done := false
+		go func() {
+			<-timer.C
+			done = true
+		}()
+
+		i := 0
+		for !done {
+			myMessage := "message " + strconv.Itoa(i)
+			i++
 			log.Info().Msgf("<%s> %s", net.Address, myMessage)
 			ctx := network.WithSignMessage(context.Background(), true)
 			net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
 		}
+
 	}
 
 	reader := bufio.NewReader(os.Stdin)

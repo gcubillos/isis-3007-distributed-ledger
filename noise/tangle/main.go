@@ -57,14 +57,15 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 			ctx.Network().Tangle.Links = t1.Links
 			ctx.Network().Tangle.State = t1.State
 
-			bytes, err := json.MarshalIndent(ctx.Network().Tangle, "", "  ")
-			if err != nil {
+			// bytes, err := json.MarshalIndent(ctx.Network().Tangle, "", "  ")
+			// if err != nil {
 
-				log2.Fatal(err)
-			}
-			// Green console color: 	\x1b[32m
-			// Reset console color: 	\x1b[0m
-			fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
+			// 	log2.Fatal(err)
+			// }
+			// // Green console color: 	\x1b[32m
+			// // Reset console color: 	\x1b[0m
+			// fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
+			fmt.Println("# Transactions: ", len(ctx.Network().Tangle.Transactions))
 
 		}
 		mutex.Unlock()
@@ -115,11 +116,20 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
-	fmt.Print("Press 'Enter' to continue...")
-	bufio.NewReader(os.Stdin).ReadBytes('\n')
+	if net.Address == "tcp://192.168.50.36:3001" {
 
-	if net.Address == "tcp://192.168.0.18:3001" {
-		for i := 0; i < 5; i++ {
+		fmt.Print("Press 'Enter' to continue...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+
+		timer := time.NewTimer(time.Second)
+
+		done := false
+		go func() {
+			<-timer.C
+			done = true
+		}()
+
+		for !done {
 
 			amountInt := 10
 

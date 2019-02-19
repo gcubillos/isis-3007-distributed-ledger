@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -24,18 +25,19 @@ type ChatPlugin struct{ *network.Plugin }
 func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 	switch msg := ctx.Message().(type) {
 	case *messages.ChatMessage:
-		log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, "Received: "+msg.Message)
+		//log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, "Received: "+msg.Message)
 
 		myAmount, err := strconv.Atoi(msg.Message)
 		if err != nil {
 			// handle error
 		}
 
-		//update blockchain
+		//update chain
 		newCube := generateCube(ctx.Network().Chain[len(ctx.Network().Chain)-1], "receive", myAmount)
 		ctx.Network().Chain = append(ctx.Network().Chain, newCube)
 
-		fmt.Printf("%+v\n", ctx.Network().Chain)
+		//fmt.Printf("%+v\n", ctx.Network().Chain)
+		fmt.Println("# of transactions: ", len(ctx.Network().Chain))
 	}
 
 	return nil
@@ -82,13 +84,22 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
-	fmt.Print("Press 'Enter' to continue...")
-  	bufio.NewReader(os.Stdin).ReadBytes('\n') 
+	if net.Address == "tcp://192.168.50.36:3001" {
 
-	if net.Address == "tcp://192.168.0.18:3001" {
-		for i := 0; i < 50; i++ {
+		fmt.Print("Press 'Enter' to continue...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
 
-			myRecipient := "tcp://192.168.0.18:3000"
+		timer := time.NewTimer(time.Second)
+
+		done := false
+		go func() {
+			<-timer.C
+			done = true
+		}()
+
+		for !done {
+
+			myRecipient := "tcp://192.168.50.36:3000"
 			myMsg := "10"
 			myAmount, err := strconv.Atoi(myMsg)
 			if err != nil {
