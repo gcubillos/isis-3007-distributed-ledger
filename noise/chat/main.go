@@ -6,11 +6,13 @@ import (
 	"flag"
 	"fmt"
 	log2 "log"
+	//"math/big"
 	net2 "net"
 	"os"
-	"strconv"
+	//"strconv"
 	"strings"
-	"time"
+	//"time"
+	//"unsafe"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -72,28 +74,47 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
-	if net.Address == "tcp://192.168.50.36:3001" {
+	// For Tests
+	if net.Address == "tcp://192.168.50.162:3001" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 
-		timer := time.NewTimer(time.Second)
+		// Throughput Test
+		// timer := time.NewTimer(time.Second)
 
-		done := false
-		go func() {
-			<-timer.C
-			done = true
-		}()
+		// done := false
+		// go func() {
+		// 	<-timer.C
+		// 	done = true
+		// }()
 
-		i := 0
-		for !done {
-			myMessage := "message " + strconv.Itoa(i)
-			i++
-			log.Info().Msgf("<%s> %s", net.Address, myMessage)
-			ctx := network.WithSignMessage(context.Background(), true)
-			net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
-		}
+		// i := 0
+		// for !done {
+		// 	myMessage := "message " + strconv.Itoa(i)
+		// 	i++
+		// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
+		// 	ctx := network.WithSignMessage(context.Background(), true)
+		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+		// }
 
+		// Latency Test
+		// start := time.Now()
+
+		// myMessage := "single message"
+		// log.Info().Msgf("<%s> %s", net.Address, myMessage)
+		// ctx := network.WithSignMessage(context.Background(), true)
+		// net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+
+		// elapsed := time.Since(start)
+		// log.Printf("Latency: %s", elapsed)
+
+		// Size Test
+	// 	myMessage := "single message"
+	// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
+	// 	ctx := network.WithSignMessage(context.Background(), true)
+	// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+	// 	fmt.Println("Size of ChatMessage: ", unsafe.Sizeof(myMessage))
 	}
 
 	reader := bufio.NewReader(os.Stdin)

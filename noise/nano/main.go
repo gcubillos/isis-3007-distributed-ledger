@@ -10,7 +10,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
+	//"time"
+	//"unsafe"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -84,42 +85,74 @@ func main() {
 		net.Bootstrap(peers...)
 	}
 
-	if net.Address == "tcp://192.168.50.36:3001" {
+	// Tests
+	if net.Address == "tcp://10.150.0.4:3000" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 
-		timer := time.NewTimer(time.Second)
+		// Throughput Test
+		// timer := time.NewTimer(time.Second)
 
-		done := false
-		go func() {
-			<-timer.C
-			done = true
-		}()
+		// done := false
+		// go func() {
+		// 	<-timer.C
+		// 	done = true
+		// }()
 
-		for !done {
+		// for !done {
 
-			myRecipient := "tcp://192.168.50.36:3000"
-			myMsg := "10"
-			myAmount, err := strconv.Atoi(myMsg)
-			if err != nil {
-				// handle error
-			}
+		// 	myRecipient := "tcp://192.168.50.36:3000"
+		// 	myMsg := "10"
+		// 	myAmount, err := strconv.Atoi(myMsg)
+		// 	if err != nil {
+		// 		// handle error
+		// 	}
 
-			ctx := network.WithSignMessage(context.Background(), true)
+		// 	ctx := network.WithSignMessage(context.Background(), true)
 
-			if client, err := net.Client(myRecipient); err == nil {
-				client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
-				log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
+		// 	if client, err := net.Client(myRecipient); err == nil {
+		// 		client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
+		// 		log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
 
-				//update chain
-				newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
-				net.Chain = append(net.Chain, newCube)
+		// 		//update chain
+		// 		newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
+		// 		net.Chain = append(net.Chain, newCube)
 
-				fmt.Printf("%+v\n", net.Chain)
-			}
-		}
+		// 		fmt.Printf("%+v\n", net.Chain)
+		// 	}
+		// }
+
+		// Latency Test
+
+		// start := time.Now()
+
+		// myRecipient := "tcp://10.150.0.2:3000"
+		// myMsg := "10"
+		// myAmount, err := strconv.Atoi(myMsg)
+		// if err != nil {
+		// 	// handle error
+		// }
+
+		// ctx := network.WithSignMessage(context.Background(), true)
+
+		// if client, err := net.Client(myRecipient); err == nil {
+		// 	client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
+		// 	log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
+
+		// 	//update chain
+		// 	newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
+		// 	net.Chain = append(net.Chain, newCube)
+
+		// 	fmt.Printf("%+v\n", net.Chain)
+		// }
+
+		// elapsed := time.Since(start)
+		// log.Printf("Latency: %s", elapsed)
 	}
+
+	// Size Test
+	//fmt.Println("Size of Nano:  ", unsafe.Sizeof(net.Chain))
 
 	reader := bufio.NewReader(os.Stdin)
 
