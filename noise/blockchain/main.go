@@ -63,6 +63,11 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 			fmt.Println("# Transactions: ", len(ctx.Network().Blockchain.Blocks))
 		}
 		mutex.Unlock()
+
+		lastBlock := ctx.Network().Blockchain.Blocks[len(ctx.Network().Blockchain.Blocks)-1]
+		elapsed := time.Since(lastBlock.TimeSent)
+		log.Printf("Latency: %s", elapsed)
+
 	}
 	return nil
 }
@@ -109,7 +114,7 @@ func main() {
 	}
 
 	// Tests
-	if net.Address == "tcp://10.150.0.4:3000" {
+	if net.Address == "tcp://192.168.0.14:3001" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
@@ -149,36 +154,32 @@ func main() {
 		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
 		// }
 
-		// Latency Test
-		// start := time.Now()
+		//Latency Test
+		timeSent := time.Now()
 
-		// amountInt := 10
+		amountInt := 10
 
-		// from := "Bob"
-		// to := "Alice"
+		from := "Bob"
+		to := "Alice"
 
-		// net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
-		// net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
+		net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
+		net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
 
-		// newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address)
+		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address, timeSent)
 
-		// if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
-		// 	mutex.Lock()
-		// 	net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
-		// 	mutex.Unlock()
-		// }
+		if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
+			mutex.Lock()
+			net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
+			mutex.Unlock()
+		}
 
-		// bytes, err := json.Marshal(net.Blockchain)
-		// if err != nil {
-		// 	log2.Println(err)
-		// }
+		bytes, err := json.Marshal(net.Blockchain)
+		if err != nil {
+			log2.Println(err)
+		}
 
-		// ctx := network.WithSignMessage(context.Background(), true)
-		// net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
-
-		// elapsed := time.Since(start)
-		// log.Printf("Latency: %s", elapsed)
-
+		ctx := network.WithSignMessage(context.Background(), true)
+		net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
 	}
 
 	// Size Test
@@ -208,7 +209,7 @@ func main() {
 		net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
 		net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
 
-		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], input, net.Address)
+		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], input, net.Address, time.Time{})
 
 		if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
 			mutex.Lock()
@@ -240,7 +241,7 @@ func getOutboundIP() string {
 }
 
 // create a new block using previous block's hash
-func generateBlock(oldBlock network.Block, Transaction string, address string) network.Block {
+func generateBlock(oldBlock network.Block, Transaction string, address string, timeSent time.Time) network.Block {
 
 	var newBlock network.Block
 
@@ -251,6 +252,7 @@ func generateBlock(oldBlock network.Block, Transaction string, address string) n
 	newBlock.Transaction = Transaction
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Signature = address
+	newBlock.TimeSent = timeSent
 
 	for i := 0; ; i++ {
 		if !isHashValid(calculateHash(newBlock), 0) {

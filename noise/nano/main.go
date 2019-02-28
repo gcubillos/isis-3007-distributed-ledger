@@ -10,8 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	//"time"
-	//"unsafe"
+	"time" //"unsafe"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -39,8 +38,19 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 
 		//fmt.Printf("%+v\n", ctx.Network().Chain)
 		fmt.Println("# of transactions: ", len(ctx.Network().Chain))
-	}
 
+		//Latency Test
+		timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		now := time.Now()
+		timeNanos := now.UnixNano()
+
+		nanos := timeNanos - timeSent
+		fmt.Printf("Latency: %dns", nanos)
+	}
 	return nil
 }
 
@@ -86,7 +96,7 @@ func main() {
 	}
 
 	// Tests
-	if net.Address == "tcp://10.150.0.4:3000" {
+	if net.Address == "tcp://192.168.0.14:3001" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
@@ -124,31 +134,25 @@ func main() {
 		// }
 
 		// Latency Test
+		now := time.Now()
+		timeNanos := now.UnixNano()
 
-		// start := time.Now()
+		myRecipient := "tcp://192.168.0.14:3000"
+		timeString := strconv.FormatInt(timeNanos, 10)
+		myAmount := 10
 
-		// myRecipient := "tcp://10.150.0.2:3000"
-		// myMsg := "10"
-		// myAmount, err := strconv.Atoi(myMsg)
-		// if err != nil {
-		// 	// handle error
-		// }
+		ctx := network.WithSignMessage(context.Background(), true)
 
-		// ctx := network.WithSignMessage(context.Background(), true)
+		if client, err := net.Client(myRecipient); err == nil {
+			client.Tell(ctx, &messages.ChatMessage{Message: timeString})
+			log.Info().Msgf("<%s> %s", net.Address, "Sent: "+timeString)
 
-		// if client, err := net.Client(myRecipient); err == nil {
-		// 	client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
-		// 	log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
+			//update chain
+			newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
+			net.Chain = append(net.Chain, newCube)
 
-		// 	//update chain
-		// 	newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
-		// 	net.Chain = append(net.Chain, newCube)
-
-		// 	fmt.Printf("%+v\n", net.Chain)
-		// }
-
-		// elapsed := time.Since(start)
-		// log.Printf("Latency: %s", elapsed)
+			fmt.Printf("%+v\n", net.Chain)
+		}
 	}
 
 	// Size Test

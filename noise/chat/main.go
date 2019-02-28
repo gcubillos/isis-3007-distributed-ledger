@@ -9,9 +9,9 @@ import (
 	//"math/big"
 	net2 "net"
 	"os"
-	//"strconv"
+	"strconv"
 	"strings"
-	//"time"
+	"time"
 	//"unsafe"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
@@ -28,8 +28,20 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 	switch msg := ctx.Message().(type) {
 	case *messages.ChatMessage:
 		log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, msg.Message)
-	}
+	
+		//Latency Test
+		timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
+		if err != nil {
+			fmt.Println(err)
+		}
 
+		now := time.Now()
+		timeNanos := now.UnixNano()
+
+		nanos := timeNanos - timeSent
+		fmt.Printf("Latency: %dns", nanos)
+
+	}
 	return nil
 }
 
@@ -75,7 +87,7 @@ func main() {
 	}
 
 	// For Tests
-	if net.Address == "tcp://192.168.50.162:3001" {
+	if net.Address == "tcp://192.168.0.14:3001" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
@@ -99,22 +111,20 @@ func main() {
 		// }
 
 		// Latency Test
-		// start := time.Now()
+		now := time.Now()
+		timeNanos := now.UnixNano()
 
-		// myMessage := "single message"
-		// log.Info().Msgf("<%s> %s", net.Address, myMessage)
-		// ctx := network.WithSignMessage(context.Background(), true)
-		// net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
-
-		// elapsed := time.Since(start)
-		// log.Printf("Latency: %s", elapsed)
+		myMessage := strconv.FormatInt(timeNanos, 10)
+		log.Info().Msgf("<%s> %s", net.Address, myMessage)
+		ctx := network.WithSignMessage(context.Background(), true)
+		net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
 
 		// Size Test
-	// 	myMessage := "single message"
-	// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
-	// 	ctx := network.WithSignMessage(context.Background(), true)
-	// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
-	// 	fmt.Println("Size of ChatMessage: ", unsafe.Sizeof(myMessage))
+		// 	myMessage := "single message"
+		// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
+		// 	ctx := network.WithSignMessage(context.Background(), true)
+		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+		// 	fmt.Println("Size of ChatMessage: ", unsafe.Sizeof(myMessage))
 	}
 
 	reader := bufio.NewReader(os.Stdin)
