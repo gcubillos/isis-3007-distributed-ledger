@@ -5,14 +5,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	log2 "log"
-	//"math/big"
+	log2 "log" //"math/big"
 	net2 "net"
 	"os"
 	"strconv"
 	"strings"
-	"time"
-	//"unsafe"
+	"time" //"unsafe"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -28,19 +26,19 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 	switch msg := ctx.Message().(type) {
 	case *messages.ChatMessage:
 		log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, msg.Message)
-	
-		//Latency Test
-		timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
-		if err != nil {
-			fmt.Println(err)
-		}
 
-		now := time.Now()
-		timeNanos := now.UnixNano()
+		// //Latency Test
+		// timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
 
-		nanos := timeNanos - timeSent
-		fmt.Printf("Latency: %dns", nanos)
+		// now := time.Now()
+		// timeNanos := now.UnixNano()
 
+		// nanos := timeNanos - timeSent
+		// fmt.Printf("Latency: %dns", nanos)
+		// fmt.Println()
 	}
 	return nil
 }
@@ -87,44 +85,47 @@ func main() {
 	}
 
 	// For Tests
-	if net.Address == "tcp://192.168.0.14:3001" {
+	if net.Address == "tcp://192.168.50.57:3000" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 
 		// Throughput Test
-		// timer := time.NewTimer(time.Second)
+		timer := time.NewTimer(time.Second)
 
-		// done := false
-		// go func() {
-		// 	<-timer.C
-		// 	done = true
-		// }()
+		done := false
+		go func() {
+			<-timer.C
+			done = true
+		}()
 
-		// i := 0
-		// for !done {
-		// 	myMessage := "message " + strconv.Itoa(i)
-		// 	i++
-		// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
-		// 	ctx := network.WithSignMessage(context.Background(), true)
-		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
-		// }
+		i := 0
+		for !done {
+			myMessage := "message " + strconv.Itoa(i)
+			i++
+			log.Info().Msgf("<%s> %s", net.Address, myMessage)
+			ctx := network.WithSignMessage(context.Background(), true)
+			net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+		}
 
 		// Latency Test
-		now := time.Now()
-		timeNanos := now.UnixNano()
 
-		myMessage := strconv.FormatInt(timeNanos, 10)
-		log.Info().Msgf("<%s> %s", net.Address, myMessage)
-		ctx := network.WithSignMessage(context.Background(), true)
-		net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+		// for i := 0; i < 50; i++ {
+		// 	now := time.Now()
+		// 	timeNanos := now.UnixNano()
 
-		// Size Test
-		// 	myMessage := "single message"
+		// 	myMessage := strconv.FormatInt(timeNanos, 10)
 		// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
 		// 	ctx := network.WithSignMessage(context.Background(), true)
 		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
-		// 	fmt.Println("Size of ChatMessage: ", unsafe.Sizeof(myMessage))
+
+		// 	// Size Test
+		// 	// 	myMessage := "single message"
+		// 	// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
+		// 	// 	ctx := network.WithSignMessage(context.Background(), true)
+		// 	// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+		// 	// 	fmt.Println("Size of ChatMessage: ", unsafe.Sizeof(myMessage))
+		// }
 	}
 
 	reader := bufio.NewReader(os.Stdin)

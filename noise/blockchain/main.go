@@ -14,9 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
-	//"unsafe"
-
+	"time" //"unsafe"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -64,9 +62,10 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 		}
 		mutex.Unlock()
 
-		lastBlock := ctx.Network().Blockchain.Blocks[len(ctx.Network().Blockchain.Blocks)-1]
-		elapsed := time.Since(lastBlock.TimeSent)
-		log.Printf("Latency: %s", elapsed)
+		//Latency test
+		// lastBlock := ctx.Network().Blockchain.Blocks[len(ctx.Network().Blockchain.Blocks)-1]
+		// elapsed := time.Since(lastBlock.TimeSent)
+		// log.Printf("Latency: %s", elapsed)
 
 	}
 	return nil
@@ -114,21 +113,51 @@ func main() {
 	}
 
 	// Tests
-	if net.Address == "tcp://192.168.0.14:3001" {
+	if net.Address == "tcp://192.168.50.57:3000" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 
 		// Throughput Test
-		// timer := time.NewTimer(time.Second)
+		timer := time.NewTimer(time.Second)
 
-		// done := false
-		// go func() {
-		// 	<-timer.C
-		// 	done = true
-		// }()
+		done := false
+		go func() {
+			<-timer.C
+			done = true
+		}()
 
-		// for !done {
+		for !done {
+			amountInt := 10
+
+			from := "Bob"
+			to := "Alice"
+
+			net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
+			net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
+
+			newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address, time.Time{})
+
+			if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
+				mutex.Lock()
+				net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
+				mutex.Unlock()
+			}
+
+			bytes, err := json.Marshal(net.Blockchain)
+			if err != nil {
+				log2.Println(err)
+			}
+
+			ctx := network.WithSignMessage(context.Background(), true)
+			net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
+		}
+
+		//Latency Test
+		// for i := 0; i < 100; i++ {
+
+		// 	timeSent := time.Now()
+
 		// 	amountInt := 10
 
 		// 	from := "Bob"
@@ -137,7 +166,7 @@ func main() {
 		// 	net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
 		// 	net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
 
-		// 	newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address)
+		// 	newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address, timeSent)
 
 		// 	if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
 		// 		mutex.Lock()
@@ -153,33 +182,6 @@ func main() {
 		// 	ctx := network.WithSignMessage(context.Background(), true)
 		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
 		// }
-
-		//Latency Test
-		timeSent := time.Now()
-
-		amountInt := 10
-
-		from := "Bob"
-		to := "Alice"
-
-		net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
-		net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
-
-		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address, timeSent)
-
-		if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
-			mutex.Lock()
-			net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
-			mutex.Unlock()
-		}
-
-		bytes, err := json.Marshal(net.Blockchain)
-		if err != nil {
-			log2.Println(err)
-		}
-
-		ctx := network.WithSignMessage(context.Background(), true)
-		net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
 	}
 
 	// Size Test
@@ -209,7 +211,7 @@ func main() {
 		net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
 		net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
 
-		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], input, net.Address, time.Time{})
+		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], input, net.Address, time.Now())
 
 		if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
 			mutex.Lock()

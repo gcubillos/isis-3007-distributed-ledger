@@ -40,16 +40,17 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 		fmt.Println("# of transactions: ", len(ctx.Network().Chain))
 
 		//Latency Test
-		timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
-		if err != nil {
-			fmt.Println(err)
-		}
+		// timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
 
-		now := time.Now()
-		timeNanos := now.UnixNano()
+		// now := time.Now()
+		// timeNanos := now.UnixNano()
 
-		nanos := timeNanos - timeSent
-		fmt.Printf("Latency: %dns", nanos)
+		// nanos := timeNanos - timeSent
+		// fmt.Printf("Latency: %dns", nanos)
+		// fmt.Println()
 	}
 	return nil
 }
@@ -96,63 +97,66 @@ func main() {
 	}
 
 	// Tests
-	if net.Address == "tcp://192.168.0.14:3001" {
+	if net.Address == "tcp://192.168.50.57:3000" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 
 		// Throughput Test
-		// timer := time.NewTimer(time.Second)
+		timer := time.NewTimer(time.Second)
 
-		// done := false
-		// go func() {
-		// 	<-timer.C
-		// 	done = true
-		// }()
+		done := false
+		go func() {
+			<-timer.C
+			done = true
+		}()
 
-		// for !done {
+		for !done {
 
-		// 	myRecipient := "tcp://192.168.50.36:3000"
-		// 	myMsg := "10"
-		// 	myAmount, err := strconv.Atoi(myMsg)
-		// 	if err != nil {
-		// 		// handle error
-		// 	}
+			myRecipient := "tcp://192.168.50.57:3001"
+			myMsg := "10"
+			myAmount, err := strconv.Atoi(myMsg)
+			if err != nil {
+				// handle error
+			}
+
+			ctx := network.WithSignMessage(context.Background(), true)
+
+			if client, err := net.Client(myRecipient); err == nil {
+				client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
+				//log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
+
+				//update chain
+				newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
+				net.Chain = append(net.Chain, newCube)
+
+				//fmt.Printf("%+v\n", net.Chain)
+			}
+		}
+
+		// Latency Test
+		// for i := 0; i < 1; i++ {
+		// 	now := time.Now()
+		// 	timeNanos := now.UnixNano()
+
+		// 	myRecipient := "tcp://192.168.50.57:3003"
+		// 	timeString := strconv.FormatInt(timeNanos, 10)
+		// 	myAmount := 10
 
 		// 	ctx := network.WithSignMessage(context.Background(), true)
 
 		// 	if client, err := net.Client(myRecipient); err == nil {
-		// 		client.Tell(ctx, &messages.ChatMessage{Message: myMsg})
-		// 		log.Info().Msgf("<%s> %s", net.Address, "Sent: "+myMsg)
+		// 		//log.Info().Msgf("<%s> %s", net.Address, "Sent: "+timeString)
 
 		// 		//update chain
 		// 		newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
 		// 		net.Chain = append(net.Chain, newCube)
 
-		// 		fmt.Printf("%+v\n", net.Chain)
+		// 		//fmt.Printf("%+v\n", net.Chain)
+
+		// 		client.Tell(ctx, &messages.ChatMessage{Message: timeString})
 		// 	}
 		// }
-
-		// Latency Test
-		now := time.Now()
-		timeNanos := now.UnixNano()
-
-		myRecipient := "tcp://192.168.0.14:3000"
-		timeString := strconv.FormatInt(timeNanos, 10)
-		myAmount := 10
-
-		ctx := network.WithSignMessage(context.Background(), true)
-
-		if client, err := net.Client(myRecipient); err == nil {
-			client.Tell(ctx, &messages.ChatMessage{Message: timeString})
-			log.Info().Msgf("<%s> %s", net.Address, "Sent: "+timeString)
-
-			//update chain
-			newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
-			net.Chain = append(net.Chain, newCube)
-
-			fmt.Printf("%+v\n", net.Chain)
-		}
 	}
 
 	// Size Test
