@@ -27,18 +27,18 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 	case *messages.ChatMessage:
 		log.Info().Msgf("<%s> %s", ctx.Client().ID.Address, msg.Message)
 
-		// //Latency Test
-		// timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
+		//Latency Test
+		timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-		// now := time.Now()
-		// timeNanos := now.UnixNano()
+		now := time.Now()
+		timeNanos := now.UnixNano()
 
-		// nanos := timeNanos - timeSent
-		// fmt.Printf("Latency: %dns", nanos)
-		// fmt.Println()
+		nanos := timeNanos - timeSent
+		fmt.Printf("Latency: %dns", nanos)
+		fmt.Println()
 	}
 	return nil
 }
@@ -85,47 +85,46 @@ func main() {
 	}
 
 	// For Tests
-	if net.Address == "tcp://192.168.50.57:3000" {
+	if net.Address == "tcp://192.168.0.16:3000" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 
-		// Throughput Test
-		timer := time.NewTimer(time.Second)
+		// // Throughput Test
+		// timer := time.NewTimer(time.Second)
 
-		done := false
-		go func() {
-			<-timer.C
-			done = true
-		}()
+		// done := false
+		// go func() {
+		// 	<-timer.C
+		// 	done = true
+		// }()
 
-		i := 0
-		for !done {
-			myMessage := "message " + strconv.Itoa(i)
-			i++
-			log.Info().Msgf("<%s> %s", net.Address, myMessage)
-			ctx := network.WithSignMessage(context.Background(), true)
-			net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
-		}
-
-		// Latency Test
-
-		// for i := 0; i < 50; i++ {
-		// 	now := time.Now()
-		// 	timeNanos := now.UnixNano()
-
-		// 	myMessage := strconv.FormatInt(timeNanos, 10)
+		// i := 0
+		// for !done {
+		// 	myMessage := "message " + strconv.Itoa(i)
+		// 	i++
 		// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
 		// 	ctx := network.WithSignMessage(context.Background(), true)
 		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
-
-		// 	// Size Test
-		// 	// 	myMessage := "single message"
-		// 	// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
-		// 	// 	ctx := network.WithSignMessage(context.Background(), true)
-		// 	// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
-		// 	// 	fmt.Println("Size of ChatMessage: ", unsafe.Sizeof(myMessage))
 		// }
+
+		// Latency Test
+		for i := 0; i < 400; i++ {
+			now := time.Now()
+			timeNanos := now.UnixNano()
+
+			myMessage := strconv.FormatInt(timeNanos, 10)
+			log.Info().Msgf("<%s> %s", net.Address, myMessage)
+			ctx := network.WithSignMessage(context.Background(), true)
+			net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+
+			// Size Test
+			// 	myMessage := "single message"
+			// 	log.Info().Msgf("<%s> %s", net.Address, myMessage)
+			// 	ctx := network.WithSignMessage(context.Background(), true)
+			// 	net.Broadcast(ctx, &messages.ChatMessage{Message: myMessage})
+			// 	fmt.Println("Size of ChatMessage: ", unsafe.Sizeof(myMessage))
+		}
 	}
 
 	reader := bufio.NewReader(os.Stdin)

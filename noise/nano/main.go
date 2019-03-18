@@ -36,21 +36,20 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 		newCube := generateCube(ctx.Network().Chain[len(ctx.Network().Chain)-1], "receive", myAmount)
 		ctx.Network().Chain = append(ctx.Network().Chain, newCube)
 
-		//fmt.Printf("%+v\n", ctx.Network().Chain)
+		//Latency Test
 		fmt.Println("# of transactions: ", len(ctx.Network().Chain))
 
-		//Latency Test
-		// timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
+		timeSent, err := strconv.ParseInt(msg.Message, 10, 64)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-		// now := time.Now()
-		// timeNanos := now.UnixNano()
+		now := time.Now()
+		timeNanos := now.UnixNano()
 
-		// nanos := timeNanos - timeSent
-		// fmt.Printf("Latency: %dns", nanos)
-		// fmt.Println()
+		nanos := timeNanos - timeSent
+		fmt.Printf("Latency: %dns", nanos)
+		fmt.Println()
 	}
 	return nil
 }
@@ -97,7 +96,7 @@ func main() {
 	}
 
 	// Tests
-	if net.Address == "tcp://192.168.50.57:3000" {
+	if net.Address == "tcp://10.150.0.2:3000" {
 
 		fmt.Print("Press 'Enter' to continue...")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
@@ -113,7 +112,7 @@ func main() {
 
 		for !done {
 
-			myRecipient := "tcp://192.168.50.57:3001"
+			myRecipient := "tcp://10.150.0.7:3000"
 			myMsg := "10"
 			myAmount, err := strconv.Atoi(myMsg)
 			if err != nil {
@@ -135,28 +134,28 @@ func main() {
 		}
 
 		// Latency Test
-		// for i := 0; i < 1; i++ {
-		// 	now := time.Now()
-		// 	timeNanos := now.UnixNano()
+		for i := 0; i < 400; i++ {
+			now := time.Now()
+			timeNanos := now.UnixNano()
 
-		// 	myRecipient := "tcp://192.168.50.57:3003"
-		// 	timeString := strconv.FormatInt(timeNanos, 10)
-		// 	myAmount := 10
+			myRecipient := "tcp://192.168.0.16:3003"
+			timeString := strconv.FormatInt(timeNanos, 10)
+			myAmount := 10
 
-		// 	ctx := network.WithSignMessage(context.Background(), true)
+			ctx := network.WithSignMessage(context.Background(), true)
 
-		// 	if client, err := net.Client(myRecipient); err == nil {
-		// 		//log.Info().Msgf("<%s> %s", net.Address, "Sent: "+timeString)
+			if client, err := net.Client(myRecipient); err == nil {
+				//log.Info().Msgf("<%s> %s", net.Address, "Sent: "+timeString)
 
-		// 		//update chain
-		// 		newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
-		// 		net.Chain = append(net.Chain, newCube)
+				//update chain
+				newCube := generateCube(net.Chain[len(net.Chain)-1], "send", myAmount)
+				net.Chain = append(net.Chain, newCube)
 
-		// 		//fmt.Printf("%+v\n", net.Chain)
+				//fmt.Printf("%+v\n", net.Chain)
 
-		// 		client.Tell(ctx, &messages.ChatMessage{Message: timeString})
-		// 	}
-		// }
+				client.Tell(ctx, &messages.ChatMessage{Message: timeString})
+			}
+		}
 	}
 
 	// Size Test
