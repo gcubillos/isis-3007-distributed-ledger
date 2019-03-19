@@ -120,126 +120,126 @@ func main() {
 	}
 
 	// Tests
-	if net.Address == "tcp://10.150.0.2:3000" {
+	// if net.Address == "tcp://10.150.0.2:3000" {
 
-		fmt.Print("Press 'Enter' to continue...")
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
+	// 	fmt.Print("Press 'Enter' to continue...")
+	// 	bufio.NewReader(os.Stdin).ReadBytes('\n')
 
-		// Throughput Tests
-		// timer := time.NewTimer(time.Second)
+	// 	// Throughput Tests
+	// 	// timer := time.NewTimer(time.Second)
 
-		// done := false
-		// go func() {
-		// 	<-timer.C
-		// 	done = true
-		// }()
+	// 	// done := false
+	// 	// go func() {
+	// 	// 	<-timer.C
+	// 	// 	done = true
+	// 	// }()
 
-		// for !done {
+	// 	// for !done {
 
-		// 	amountInt := 10
+	// 	// 	amountInt := 10
 
-		// 	from := "Bob"
-		// 	to := "Alice"
+	// 	// 	from := "Bob"
+	// 	// 	to := "Alice"
 
-		// 	net.Tangle.State[from] = net.Tangle.State[from] - amountInt
-		// 	net.Tangle.State[to] = net.Tangle.State[to] + amountInt
+	// 	// 	net.Tangle.State[from] = net.Tangle.State[from] - amountInt
+	// 	// 	net.Tangle.State[to] = net.Tangle.State[to] + amountInt
 
-		// 	newTransaction := generateTransaction(net.Tangle.Transactions[len(net.Tangle.Transactions)-1], "send 10 from Bob to Alice", net.Address, time.Time{})
+	// 	// 	newTransaction := generateTransaction(net.Tangle.Transactions[len(net.Tangle.Transactions)-1], "send 10 from Bob to Alice", net.Address, time.Time{})
 
-		// 	//START: New way of forming Links
-		// 	candidates := []int{}
-		// 	for _, c := range net.Tangle.Transactions {
-		// 		if newTransaction.TimeInt-net.Tangle.H > c.TimeInt {
-		// 			candidates = append(candidates, c.Index)
-		// 		}
-		// 	}
+	// 	// 	//START: New way of forming Links
+	// 	// 	candidates := []int{}
+	// 	// 	for _, c := range net.Tangle.Transactions {
+	// 	// 		if newTransaction.TimeInt-net.Tangle.H > c.TimeInt {
+	// 	// 			candidates = append(candidates, c.Index)
+	// 	// 		}
+	// 	// 	}
 
-		// 	candidateLinks := []network.Link{}
-		// 	for _, l := range net.Tangle.Links {
-		// 		if newTransaction.TimeInt-net.Tangle.H > net.Tangle.Transactions[l.Source].TimeInt {
-		// 			candidateLinks = append(candidateLinks, l)
-		// 		}
-		// 	}
+	// 	// 	candidateLinks := []network.Link{}
+	// 	// 	for _, l := range net.Tangle.Links {
+	// 	// 		if newTransaction.TimeInt-net.Tangle.H > net.Tangle.Transactions[l.Source].TimeInt {
+	// 	// 			candidateLinks = append(candidateLinks, l)
+	// 	// 		}
+	// 	// 	}
 
-		// 	tips := getTips(net.Tangle.TipSelection, candidates, candidateLinks, net.Tangle)
+	// 	// 	tips := getTips(net.Tangle.TipSelection, candidates, candidateLinks, net.Tangle)
 
-		// 	mutex.Lock()
-		// 	if len(tips) > 0 {
-		// 		newTransaction.Hash_App1 = calculateHash(net.Tangle.Transactions[tips[0]])
-		// 		newLink := generateLink(net.Tangle.Transactions[tips[0]], newTransaction)
-		// 		net.Tangle.Links = append(net.Tangle.Links, newLink)
-		// 		if len(tips) > 1 && tips[0] != tips[1] {
-		// 			newTransaction.Hash_App2 = calculateHash(net.Tangle.Transactions[tips[1]])
-		// 			newLink := generateLink(net.Tangle.Transactions[tips[1]], newTransaction)
-		// 			net.Tangle.Links = append(net.Tangle.Links, newLink)
-		// 		}
-		// 	}
-		// 	net.Tangle.Transactions = append(net.Tangle.Transactions, newTransaction)
-		// 	mutex.Unlock()
+	// 	// 	mutex.Lock()
+	// 	// 	if len(tips) > 0 {
+	// 	// 		newTransaction.HashApp1 = calculateHash(net.Tangle.Transactions[tips[0]])
+	// 	// 		newLink := generateLink(net.Tangle.Transactions[tips[0]], newTransaction)
+	// 	// 		net.Tangle.Links = append(net.Tangle.Links, newLink)
+	// 	// 		if len(tips) > 1 && tips[0] != tips[1] {
+	// 	// 			newTransaction.HashApp2 = calculateHash(net.Tangle.Transactions[tips[1]])
+	// 	// 			newLink := generateLink(net.Tangle.Transactions[tips[1]], newTransaction)
+	// 	// 			net.Tangle.Links = append(net.Tangle.Links, newLink)
+	// 	// 		}
+	// 	// 	}
+	// 	// 	net.Tangle.Transactions = append(net.Tangle.Transactions, newTransaction)
+	// 	// 	mutex.Unlock()
 
-		// 	bytes, err := json.Marshal(net.Tangle)
-		// 	if err != nil {
-		// 		log2.Println(err)
-		// 	}
+	// 	// 	bytes, err := json.Marshal(net.Tangle)
+	// 	// 	if err != nil {
+	// 	// 		log2.Println(err)
+	// 	// 	}
 
-		// 	ctx := network.WithSignMessage(context.Background(), true)
-		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
-		// }
+	// 	// 	ctx := network.WithSignMessage(context.Background(), true)
+	// 	// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
+	// 	// }
 
-		// Latency Test
-		for i := 0; i < 50; i++ {
-			timeSent := time.Now()
+	// 	// Latency Test
+	// 	for i := 0; i < 50; i++ {
+	// 		timeSent := time.Now()
 
-			amountInt := 10
+	// 		amountInt := 10
 
-			from := "Bob"
-			to := "Alice"
+	// 		from := "Bob"
+	// 		to := "Alice"
 
-			net.Tangle.State[from] = net.Tangle.State[from] - amountInt
-			net.Tangle.State[to] = net.Tangle.State[to] + amountInt
+	// 		net.Tangle.State[from] = net.Tangle.State[from] - amountInt
+	// 		net.Tangle.State[to] = net.Tangle.State[to] + amountInt
 
-			newTransaction := generateTransaction(net.Tangle.Transactions[len(net.Tangle.Transactions)-1], "send 10 from Bob to Alice", net.Address, timeSent)
+	// 		newTransaction := generateTransaction(net.Tangle.Transactions[len(net.Tangle.Transactions)-1], "send 10 from Bob to Alice", net.Address, timeSent)
 
-			//START: New way of forming Links
-			candidates := []int{}
-			for _, c := range net.Tangle.Transactions {
-				if newTransaction.TimeInt-net.Tangle.H > c.TimeInt {
-					candidates = append(candidates, c.Index)
-				}
-			}
+	// 		//START: New way of forming Links
+	// 		candidates := []int{}
+	// 		for _, c := range net.Tangle.Transactions {
+	// 			if newTransaction.TimeInt-net.Tangle.H > c.TimeInt {
+	// 				candidates = append(candidates, c.Index)
+	// 			}
+	// 		}
 
-			candidateLinks := []network.Link{}
-			for _, l := range net.Tangle.Links {
-				if newTransaction.TimeInt-net.Tangle.H > net.Tangle.Transactions[l.Source].TimeInt {
-					candidateLinks = append(candidateLinks, l)
-				}
-			}
+	// 		candidateLinks := []network.Link{}
+	// 		for _, l := range net.Tangle.Links {
+	// 			if newTransaction.TimeInt-net.Tangle.H > net.Tangle.Transactions[l.Source].TimeInt {
+	// 				candidateLinks = append(candidateLinks, l)
+	// 			}
+	// 		}
 
-			tips := getTips(net.Tangle.TipSelection, candidates, candidateLinks, net.Tangle)
+	// 		tips := getTips(net.Tangle.TipSelection, candidates, candidateLinks, net.Tangle)
 
-			mutex.Lock()
-			if len(tips) > 0 {
-				newTransaction.Hash_App1 = calculateHash(net.Tangle.Transactions[tips[0]])
-				newLink := generateLink(net.Tangle.Transactions[tips[0]], newTransaction)
-				net.Tangle.Links = append(net.Tangle.Links, newLink)
-				if len(tips) > 1 && tips[0] != tips[1] {
-					newTransaction.Hash_App2 = calculateHash(net.Tangle.Transactions[tips[1]])
-					newLink := generateLink(net.Tangle.Transactions[tips[1]], newTransaction)
-					net.Tangle.Links = append(net.Tangle.Links, newLink)
-				}
-			}
-			net.Tangle.Transactions = append(net.Tangle.Transactions, newTransaction)
-			mutex.Unlock()
+	// 		mutex.Lock()
+	// 		if len(tips) > 0 {
+	// 			newTransaction.HashApp1 = calculateHash(net.Tangle.Transactions[tips[0]])
+	// 			newLink := generateLink(net.Tangle.Transactions[tips[0]], newTransaction)
+	// 			net.Tangle.Links = append(net.Tangle.Links, newLink)
+	// 			if len(tips) > 1 && tips[0] != tips[1] {
+	// 				newTransaction.HashApp2 = calculateHash(net.Tangle.Transactions[tips[1]])
+	// 				newLink := generateLink(net.Tangle.Transactions[tips[1]], newTransaction)
+	// 				net.Tangle.Links = append(net.Tangle.Links, newLink)
+	// 			}
+	// 		}
+	// 		net.Tangle.Transactions = append(net.Tangle.Transactions, newTransaction)
+	// 		mutex.Unlock()
 
-			bytes, err := json.Marshal(net.Tangle)
-			if err != nil {
-				log2.Println(err)
-			}
+	// 		bytes, err := json.Marshal(net.Tangle)
+	// 		if err != nil {
+	// 			log2.Println(err)
+	// 		}
 
-			ctx := network.WithSignMessage(context.Background(), true)
-			net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
-		}
-	}
+	// 		ctx := network.WithSignMessage(context.Background(), true)
+	// 		net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
+	// 	}
+	// }
 
 	// Size Test
 	// fmt.Println("Size of Tangle:  ", unsafe.Sizeof(net.Tangle))
@@ -290,11 +290,11 @@ func main() {
 
 		mutex.Lock()
 		if len(tips) > 0 {
-			newTransaction.Hash_App1 = calculateHash(net.Tangle.Transactions[tips[0]])
+			newTransaction.HashApp1 = calculateHash(net.Tangle.Transactions[tips[0]])
 			newLink := generateLink(net.Tangle.Transactions[tips[0]], newTransaction)
 			net.Tangle.Links = append(net.Tangle.Links, newLink)
 			if len(tips) > 1 && tips[0] != tips[1] {
-				newTransaction.Hash_App2 = calculateHash(net.Tangle.Transactions[tips[1]])
+				newTransaction.HashApp2 = calculateHash(net.Tangle.Transactions[tips[1]])
 				newLink := generateLink(net.Tangle.Transactions[tips[1]], newTransaction)
 				net.Tangle.Links = append(net.Tangle.Links, newLink)
 			}
