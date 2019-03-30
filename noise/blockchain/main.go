@@ -15,7 +15,7 @@ import (
 	"strings"
 	"sync"
 	"time" 
-	"unsafe"
+	// "unsafe"
 
 	"github.com/perlin-network/noise/crypto/ed25519"
 	"github.com/perlin-network/noise/examples/chat/messages"
@@ -59,11 +59,12 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 			// // Green console color: 	\x1b[32m
 			// // Reset console color: 	\x1b[0m
 			// fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
-			fmt.Println("# Transactions: ", len(ctx.Network().Blockchain.Blocks))
+			// fmt.Println("# Transactions: ", len(ctx.Network().Blockchain.Blocks))
 		}
 		mutex.Unlock()
 
 		//Latency test
+		fmt.Println("# Transactions: ", len(ctx.Network().Blockchain.Blocks))
 		// lastBlock := ctx.Network().Blockchain.Blocks[len(ctx.Network().Blockchain.Blocks)-1]
 		// elapsed := time.Since(lastBlock.TimeSent)
 		// log.Printf("Latency: %s", elapsed)
@@ -114,82 +115,82 @@ func main() {
 	}
 
 	// Tests
-	// if net.Address == "tcp://10.150.0.2:3000" {
+	if net.Address == "tcp://10.150.0.2:3000" {
 
-	// 	fmt.Print("Press 'Enter' to continue...")
-	// 	bufio.NewReader(os.Stdin).ReadBytes('\n')
+		fmt.Print("Press 'Enter' to continue...")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
 
 	// 	// Throughput Test
-	// 	// timer := time.NewTimer(time.Second)
+		timer := time.NewTimer(time.Second)
 
-	// 	// done := false
-	// 	// go func() {
-	// 	// 	<-timer.C
-	// 	// 	done = true
-	// 	// }()
+		done := false
+		go func() {
+			<-timer.C
+			done = true
+		}()
 
-	// 	// for !done {
-	// 	// 	amountInt := 10
+		for !done {
+			amountInt := 10
 
-	// 	// 	from := "Bob"
-	// 	// 	to := "Alice"
+			from := "Bob"
+			to := "Alice"
 
-	// 	// 	net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
-	// 	// 	net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
+			net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
+			net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
 
-	// 	// 	newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address, time.Time{})
+			newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address, time.Time{})
 
-	// 	// 	if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
-	// 	// 		mutex.Lock()
-	// 	// 		net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
-	// 	// 		mutex.Unlock()
-	// 	// 	}
+			if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
+				mutex.Lock()
+				net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
+				mutex.Unlock()
+			}
 
-	// 	// 	bytes, err := json.Marshal(net.Blockchain)
-	// 	// 	if err != nil {
-	// 	// 		log2.Println(err)
-	// 	// 	}
+			bytes, err := json.Marshal(net.Blockchain)
+			if err != nil {
+				log2.Println(err)
+			}
 
-	// 	// 	ctx := network.WithSignMessage(context.Background(), true)
-	// 	// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
-	// 	// }
+			ctx := network.WithSignMessage(context.Background(), true)
+			net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
+		}
 
-	// 	//Latency Test
-	// 	for i := 0; i < 400; i++ {
+		// Latency Test
+		// for i := 0; i < 50; i++ {
 
-	// 		timeSent := time.Now()
+		// 	timeSent := time.Now()
 
-	// 		amountInt := 10
+		// 	amountInt := 10
 
-	// 		from := "Bob"
-	// 		to := "Alice"
+		// 	from := "Bob"
+		// 	to := "Alice"
 
-	// 		net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
-	// 		net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
+		// 	net.Blockchain.State[from] = net.Blockchain.State[from] - amountInt
+		// 	net.Blockchain.State[to] = net.Blockchain.State[to] + amountInt
 
-	// 		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address, timeSent)
+		// 	newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], "send 10 from Bob to Alice", net.Address, timeSent)
 
-	// 		if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
-	// 			mutex.Lock()
-	// 			net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
-	// 			mutex.Unlock()
-	// 		}
+		// 	if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
+		// 		mutex.Lock()
+		// 		net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
+		// 		mutex.Unlock()
+		// 	}
 
-	// 		bytes, err := json.Marshal(net.Blockchain)
-	// 		if err != nil {
-	// 			log2.Println(err)
-	// 		}
+		// 	bytes, err := json.Marshal(net.Blockchain)
+		// 	if err != nil {
+		// 		log2.Println(err)
+		// 	}
 
-	// 		ctx := network.WithSignMessage(context.Background(), true)
-	// 		net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
-	// 	}
-	// }
+		// 	ctx := network.WithSignMessage(context.Background(), true)
+		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(bytes)})
+		// }
+	}
 
 	// Size Tests
-	fmt.Println("Size of Blocks:  ", unsafe.Sizeof(net.Blockchain.Blocks))
-	fmt.Println("Size of Tangle - Transactions:  ", unsafe.Sizeof(net.Tangle.Transactions))
-	fmt.Println("Size of Tangle - Links:  ", unsafe.Sizeof(net.Tangle.Links))
-	fmt.Println("Size of Lattice:  ", unsafe.Sizeof(net.Lattice))
+	// fmt.Println("Size of Blocks:  ", unsafe.Sizeof(net.Blockchain.Blocks))
+	// fmt.Println("Size of Tangle - Transactions:  ", unsafe.Sizeof(net.Tangle.Transactions))
+	// fmt.Println("Size of Tangle - Links:  ", unsafe.Sizeof(net.Tangle.Links))
+	// fmt.Println("Size of Lattice:  ", unsafe.Sizeof(net.Lattice))
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -217,11 +218,13 @@ func main() {
 
 		newBlock := generateBlock(net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1], input, net.Address, time.Now())
 
-		if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
-			mutex.Lock()
-			net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
-			mutex.Unlock()
-		}
+		// if isBlockValid(newBlock, net.Blockchain.Blocks[len(net.Blockchain.Blocks)-1]) {
+		// 	mutex.Lock()
+		// 	net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
+		// 	mutex.Unlock()
+		// }
+
+		net.Blockchain.Blocks = append(net.Blockchain.Blocks, newBlock)
 
 		bytes, err := json.Marshal(net.Blockchain)
 		if err != nil {
@@ -260,18 +263,20 @@ func generateBlock(oldBlock network.Block, Transaction string, address string, t
 	newBlock.Signature = address
 	newBlock.TimeSent = timeSent
 
-	for i := 0; ; i++ {
-		if !isHashValid(calculateHash(newBlock), 0) {
-			//fmt.Println(calculateHash(newBlock), " do more work!")
-			time.Sleep(time.Second)
-			continue
-		} else {
-			//fmt.Println(calculateHash(newBlock), " work done!")
-			newBlock.Hash = calculateHash(newBlock)
-			break
-		}
+	newBlock.Hash = calculateHash(newBlock)
 
-	}
+	// for i := 0; ; i++ {
+	// 	if !isHashValid(calculateHash(newBlock), 0) {
+	// 		//fmt.Println(calculateHash(newBlock), " do more work!")
+	// 		time.Sleep(time.Second)
+	// 		continue
+	// 	} else {
+	// 		//fmt.Println(calculateHash(newBlock), " work done!")
+	// 		newBlock.Hash = calculateHash(newBlock)
+	// 		break
+	// 	}
+	// }
+
 	return newBlock
 }
 

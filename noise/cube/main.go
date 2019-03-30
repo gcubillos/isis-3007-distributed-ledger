@@ -41,22 +41,56 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 			log2.Fatal(err)
 		}
 
-		owner := cube.Signature
+		//update lattice for sender
 		mutex.Lock()
+		owner := cube.Signature
 		ctx.Network().Lattice[owner] = append(ctx.Network().Lattice[owner], cube)
-		fmt.Println("# Transactions: ", len(ctx.Network().Lattice[owner]))
 		mutex.Unlock()
 
+		//update lattice for receiver
+		receiver := cube.Receiver
+		if ctx.Network().Address == receiver {
+			mutex.Lock()
+			receiveChain := ctx.Network().Lattice[receiver]
+			//generateCube(oldCube, typeOfTransaction, amount, signature, hash, timeSent, sender, receiver)
+			receiveCube := generateCube(receiveChain[len(receiveChain)-1], "receive", cube.Amount, receiver, " ", cube.TimeSent, cube.Sender, cube.Receiver)
+			receiveCube.Source = cube.Hash
+			receiveChain = append(receiveChain, receiveCube)
+			ctx.Network().Lattice[receiver] = receiveChain
+			mutex.Unlock()
+
+			r, err := json.Marshal(receiveCube)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+
+			ctx2 := network.WithSignMessage(context.Background(), true)
+			ctx.Network().Broadcast(ctx2, &messages.ChatMessage{Message: string(r)})
+		}
+		
+		if cube.Type == "receive" {
+
+			//Latency test
+			fmt.Println("# Transactions: ", len(ctx.Network().Lattice[receiver]))
+
+			elapsed := time.Since(cube.TimeSent)
+			log.Printf("Latency: %s", elapsed)
+
+			//Print lattice
+			// b, err := json.MarshalIndent(ctx.Network().Lattice, "", "  ")
+			// if err != nil {
+			// 	fmt.Println("error:", err)
+			// }
+			// fmt.Print(string(b))
+		}
+		
+		//Print lattice
 		// b, err := json.MarshalIndent(ctx.Network().Lattice, "", "  ")
 		// if err != nil {
 		// 	fmt.Println("error:", err)
 		// }
 		// fmt.Print(string(b))
-		//fmt.Println("OTRO")
 
-		//Latency test
-		// elapsed := time.Since(cube.TimeSent)
-		// log.Printf("Latency: %s", elapsed)
 	}
 	return nil
 }
@@ -103,101 +137,84 @@ func main() {
 	}
 
 	// Tests
-	if net.Address == "tcp://10.150.0.2:3000" {
+	// if net.Address == "tcp://10.150.0.2:3000" {
 
-		fmt.Print("Press 'Enter' to continue...")
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
+	fmt.Print("Press 'Enter' to continue...")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
 
-		//Throughput Test
-		// timer := time.NewTimer(time.Second)
+	//Throughput Test
+	// timer := time.NewTimer(time.Second)
 
-		// done := false
-		// go func() {
-		// 	<-timer.C
-		// 	done = true
-		// }()
+	// done := false
+	// go func() {
+	// 	<-timer.C
+	// 	done = true
+	// }()
 
-		// for !done {
-		// 	mySender := "tcp://10.150.0.2:3000"
-		// 	myRecipient := "tcp://10.150.0.4:3000"
-		// 	myMsg := "10"
-		// 	myAmount, err := strconv.Atoi(myMsg)
-		// 	if err != nil {
-		// 		// handle error
-		// 	}
+	// for !done {
+	// 	sender := "tcp://10.150.0.2:3000"
+	// 	receiver := "tcp://10.150.0.4:3000"
+	// 	myMsg := "10"
+	// 	myAmount, err := strconv.Atoi(myMsg)
+	// 	if err != nil {
+	// 		// handle error
+	// 	}
 
-		// 	//update lattice for sender
-		// 	sendChain := net.Lattice[mySender]
-		// 	sendCube := generateCube(sendChain[len(sendChain)-1], "send", myAmount, mySender, " ", time.Now())
-		// 	sendChain = append(sendChain, sendCube)
-		// 	net.Lattice[mySender] = sendChain
+	// 	//update lattice for sender
+	// 	sendChain := net.Lattice[sender]
+	// 	//generateCube(oldCube, typeOfTransaction, amount, signature, hash, timeSent, sender, receiver)
+	// 	sendCube := generateCube(sendChain[len(sendChain)-1], "send", myAmount, sender, " ", time.Now(), sender, receiver)
+	// 	sendChain = append(sendChain, sendCube)
+	// 	net.Lattice[sender] = sendChain
 
-		// 	//update lattice for receiver
-		// 	receiveChain := net.Lattice[myRecipient]
-		// 	receiveCube := generateCube(receiveChain[len(receiveChain)-1], "receive", myAmount, myRecipient, " ", time.Now())
-		// 	receiveCube.Source = sendCube.Hash
-		// 	receiveChain = append(receiveChain, receiveCube)
-		// 	net.Lattice[myRecipient] = receiveChain
+	// 	s, err := json.Marshal(sendCube)
+	// 	if err != nil {
+	// 		fmt.Println("error:", err)
+	// 	}
 
-		// 	s, err := json.Marshal(sendCube)
-		// 	if err != nil {
-		// 		fmt.Println("error:", err)
-		// 	}
+	// 	ctx := network.WithSignMessage(context.Background(), true)
+	// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(s)})
+	// }
 
-		// 	r, err := json.Marshal(receiveCube)
-		// 	if err != nil {
-		// 		fmt.Println("error:", err)
-		// 	}
+	// Latency Test
+	for i := 0; i < 50; i++ {
 
-		// 	ctx := network.WithSignMessage(context.Background(), true)
-		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(s)})
-		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(r)})
-		// }
+		timeSent := time.Now()
 
-		// Latency Test
-		// for i := 0; i < 800; i++ {
+		sender := " "
+		receiver := " "
+		if net.Address == "tcp://192.168.0.24:3000" {
+			sender = "tcp://192.168.0.24:3000"
+			receiver = "tcp://192.168.0.24:3001"
+		} else {
+			sender = "tcp://192.168.0.24:3001"
+			receiver = "tcp://192.168.0.24:3000"
+		}
 
-		// 	timeSent := time.Now()
+		myMsg := "10"
+		myAmount, err := strconv.Atoi(myMsg)
+		if err != nil {
+			// handle error
+		}
 
-		// 	mySender := "tcp://10.150.0.2:3000"
-		// 	myRecipient := "tcp://10.150.0.4:3000"
-		// 	myMsg := "10"
-		// 	myAmount, err := strconv.Atoi(myMsg)
-		// 	if err != nil {
-		// 		// handle error
-		// 	}
+		//update lattice for sender
+		sendChain := net.Lattice[sender]
+		sendCube := generateCube(sendChain[len(sendChain)-1], "send", myAmount, sender, " ", timeSent, sender, receiver)
+		sendChain = append(sendChain, sendCube)
+		net.Lattice[sender] = sendChain
 
-		// 	//update lattice for sender
-		// 	sendChain := net.Lattice[mySender]
-		// 	sendCube := generateCube(sendChain[len(sendChain)-1], "send", myAmount, mySender, " ", timeSent)
-		// 	sendChain = append(sendChain, sendCube)
-		// 	net.Lattice[mySender] = sendChain
+		s, err := json.Marshal(sendCube)
+		if err != nil {
+			fmt.Println("error:", err)
+		}
 
-		// 	//update lattice for receiver
-		// 	receiveChain := net.Lattice[myRecipient]
-		// 	receiveCube := generateCube(receiveChain[len(receiveChain)-1], "receive", myAmount, myRecipient, " ", timeSent)
-		// 	receiveCube.Source = sendCube.Hash
-		// 	receiveChain = append(receiveChain, receiveCube)
-		// 	net.Lattice[myRecipient] = receiveChain
-
-		// 	s, err := json.Marshal(sendCube)
-		// 	if err != nil {
-		// 		fmt.Println("error:", err)
-		// 	}
-
-		// 	r, err := json.Marshal(receiveCube)
-		// 	if err != nil {
-		// 		fmt.Println("error:", err)
-		// 	}
-
-		// 	ctx := network.WithSignMessage(context.Background(), true)
-		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(s)})
-		// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(r)})
-		// }
-
-		// 	// Size Test
-		// 	// fmt.Println("Size of Lattice:  ", unsafe.Sizeof(net.Lattice))
+		ctx := network.WithSignMessage(context.Background(), true)
+		net.Broadcast(ctx, &messages.ChatMessage{Message: string(s)})
 	}
+
+	// 	// Size Test
+	// 	// fmt.Println("Size of Lattice:  ", unsafe.Sizeof(net.Lattice))
+	// }
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -211,8 +228,8 @@ func main() {
 
 		fullMsg := strings.Fields(input)
 
-		mySender := fullMsg[0]
-		myRecipient := fullMsg[1]
+		sender := fullMsg[0]
+		receiver := fullMsg[1]
 		myMsg := fullMsg[2]
 		myAmount, err := strconv.Atoi(myMsg)
 		if err != nil {
@@ -220,31 +237,18 @@ func main() {
 		}
 
 		//update lattice for sender
-		sendChain := net.Lattice[mySender]
-		sendCube := generateCube(sendChain[len(sendChain)-1], "send", myAmount, net.Address, " ", time.Now())
+		sendChain := net.Lattice[sender]
+		sendCube := generateCube(sendChain[len(sendChain)-1], "send", myAmount, sender, " ", time.Now(), sender, receiver)
 		sendChain = append(sendChain, sendCube)
-		net.Lattice[mySender] = sendChain
-
-		//update lattice for receiver
-		receiveChain := net.Lattice[myRecipient]
-		receiveCube := generateCube(receiveChain[len(receiveChain)-1], "receive", myAmount, myRecipient, " ", time.Now())
-		receiveCube.Source = sendCube.Hash
-		receiveChain = append(receiveChain, receiveCube)
-		net.Lattice[myRecipient] = receiveChain
+		net.Lattice[sender] = sendChain
 
 		s, err := json.Marshal(sendCube)
 		if err != nil {
 			fmt.Println("error:", err)
 		}
 
-		r, err := json.Marshal(receiveCube)
-		if err != nil {
-			fmt.Println("error:", err)
-		}
-
 		ctx := network.WithSignMessage(context.Background(), true)
 		net.Broadcast(ctx, &messages.ChatMessage{Message: string(s)})
-		net.Broadcast(ctx, &messages.ChatMessage{Message: string(r)})
 	}
 }
 
@@ -261,7 +265,7 @@ func getOutboundIP() string {
 }
 
 // create a new cube
-func generateCube(oldCube network.Cube, typeOfTransaction string, amount int, address string, hash string, timeSent time.Time) network.Cube {
+func generateCube(oldCube network.Cube, typeOfTransaction string, amount int, signature string, hash string, timeSent time.Time, sender string, receiver string) network.Cube {
 
 	var newCube network.Cube
 
@@ -284,8 +288,11 @@ func generateCube(oldCube network.Cube, typeOfTransaction string, amount int, ad
 		newCube.Hash = hash
 	}
 
-	newCube.Signature = address
+	newCube.Signature = signature
 	newCube.TimeSent = timeSent
+
+	newCube.Sender = sender
+	newCube.Receiver = receiver
 
 	return newCube
 }
