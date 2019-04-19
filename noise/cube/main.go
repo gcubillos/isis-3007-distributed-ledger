@@ -67,29 +67,29 @@ func (state *ChatPlugin) Receive(ctx *network.PluginContext) error {
 			ctx2 := network.WithSignMessage(context.Background(), true)
 			ctx.Network().Broadcast(ctx2, &messages.ChatMessage{Message: string(r)})
 		}
-		
-		if cube.Type == "receive" {
 
-			//Latency test
-			fmt.Println("# Transactions: ", len(ctx.Network().Lattice[receiver]))
+		// if cube.Type == "receive" {
 
-			elapsed := time.Since(cube.TimeSent)
-			log.Printf("Latency: %s", elapsed)
+		// 	//Latency test
+		// 	fmt.Println("# Transactions: ", len(ctx.Network().Lattice[receiver]))
 
-			//Print lattice
-			// b, err := json.MarshalIndent(ctx.Network().Lattice, "", "  ")
-			// if err != nil {
-			// 	fmt.Println("error:", err)
-			// }
-			// fmt.Print(string(b))
-		}
-		
-		//Print lattice
-		// b, err := json.MarshalIndent(ctx.Network().Lattice, "", "  ")
-		// if err != nil {
-		// 	fmt.Println("error:", err)
+		// 	elapsed := time.Since(cube.TimeSent)
+		// 	log.Printf("Latency: %s", elapsed)
+
+		// 	//Print lattice
+		// 	// b, err := json.MarshalIndent(ctx.Network().Lattice, "", "  ")
+		// 	// if err != nil {
+		// 	// 	fmt.Println("error:", err)
+		// 	// }
+		// 	// fmt.Print(string(b))
 		// }
-		// fmt.Print(string(b))
+
+		// Print lattice
+		b, err := json.MarshalIndent(ctx.Network().Lattice, "", "  ")
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		fmt.Print(string(b))
 
 	}
 	return nil
@@ -139,8 +139,8 @@ func main() {
 	// Tests
 	// if net.Address == "tcp://10.150.0.2:3000" {
 
-	fmt.Print("Press 'Enter' to continue...")
-	bufio.NewReader(os.Stdin).ReadBytes('\n')
+	// fmt.Print("Press 'Enter' to continue...")
+	// bufio.NewReader(os.Stdin).ReadBytes('\n')
 
 	//Throughput Test
 	// timer := time.NewTimer(time.Second)
@@ -177,43 +177,43 @@ func main() {
 	// }
 
 	// Latency Test
-	for i := 0; i < 50; i++ {
+	// for i := 0; i < 50; i++ {
 
-		timeSent := time.Now()
+	// 	timeSent := time.Now()
 
-		sender := " "
-		receiver := " "
-		if net.Address == "tcp://192.168.0.24:3000" {
-			sender = "tcp://192.168.0.24:3000"
-			receiver = "tcp://192.168.0.24:3001"
-		} else {
-			sender = "tcp://192.168.0.24:3001"
-			receiver = "tcp://192.168.0.24:3000"
-		}
+	// 	sender := " "
+	// 	receiver := " "
+	// 	if net.Address == "tcp://192.168.0.24:3000" {
+	// 		sender = "tcp://192.168.0.24:3000"
+	// 		receiver = "tcp://192.168.0.24:3001"
+	// 	} else {
+	// 		sender = "tcp://192.168.0.24:3001"
+	// 		receiver = "tcp://192.168.0.24:3000"
+	// 	}
 
-		myMsg := "10"
-		myAmount, err := strconv.Atoi(myMsg)
-		if err != nil {
-			// handle error
-		}
+	// 	myMsg := "10"
+	// 	myAmount, err := strconv.Atoi(myMsg)
+	// 	if err != nil {
+	// 		// handle error
+	// 	}
 
-		//update lattice for sender
-		sendChain := net.Lattice[sender]
-		sendCube := generateCube(sendChain[len(sendChain)-1], "send", myAmount, sender, " ", timeSent, sender, receiver)
-		sendChain = append(sendChain, sendCube)
-		net.Lattice[sender] = sendChain
+	// 	//update lattice for sender
+	// 	sendChain := net.Lattice[sender]
+	// 	sendCube := generateCube(sendChain[len(sendChain)-1], "send", myAmount, sender, " ", timeSent, sender, receiver)
+	// 	sendChain = append(sendChain, sendCube)
+	// 	net.Lattice[sender] = sendChain
 
-		s, err := json.Marshal(sendCube)
-		if err != nil {
-			fmt.Println("error:", err)
-		}
+	// 	s, err := json.Marshal(sendCube)
+	// 	if err != nil {
+	// 		fmt.Println("error:", err)
+	// 	}
 
-		ctx := network.WithSignMessage(context.Background(), true)
-		net.Broadcast(ctx, &messages.ChatMessage{Message: string(s)})
-	}
+	// 	ctx := network.WithSignMessage(context.Background(), true)
+	// 	net.Broadcast(ctx, &messages.ChatMessage{Message: string(s)})
+	// }
 
-	// 	// Size Test
-	// 	// fmt.Println("Size of Lattice:  ", unsafe.Sizeof(net.Lattice))
+	// Size Test
+	// fmt.Println("Size of Lattice:  ", unsafe.Sizeof(net.Lattice[net.Address][0]))
 	// }
 
 	reader := bufio.NewReader(os.Stdin)
@@ -301,7 +301,7 @@ func generateCube(oldCube network.Cube, typeOfTransaction string, amount int, si
 func calculateHash(cube network.Cube) string {
 	// record := strconv.Itoa(block.Index) + block.Timestamp +
 	// 	strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
-	record := strconv.Itoa(cube.Amount + cube.Balance + cube.Index)
+	record := strconv.Itoa(cube.Amount+cube.Balance+cube.Index) + cube.Type
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
