@@ -1,2 +1,3 @@
-# ssanchez59_Blockchain
-Tesis MISIS - Sebastian Sanchez Galiano
+# Distributed Ledger
+Proyecto de Grado - Gabriel Cubillos Bolivar
+Basado en el trabajo de Tesis MISIS - Sebastian Sanchez Galiano
