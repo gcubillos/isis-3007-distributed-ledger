@@ -17,7 +17,6 @@ import (
 	"time" // "unsafe"
 
 	"github.com/perlin-network/noise"
-	"crypto/ed25519"
 
 	"log"
 	 
