@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	log2 "log"
 	"math"
 	mrand "math/rand"
@@ -18,12 +19,8 @@ import (
 	"sync"
 	"time" //"unsafe"
 
-	"github.com/perlin-network/noise/crypto/ed25519"
-	"github.com/perlin-network/noise/examples/chat/messages"
-	"github.com/perlin-network/noise/log"
-	"github.com/perlin-network/noise/network"
-	"github.com/perlin-network/noise/network/discovery"
-	"github.com/perlin-network/noise/types/opcode"
+	"github.com/perlin-network/noise"
+	"github.com/oasisprotocol/ed25519"	
 )
 
 type ChatPlugin struct{ *network.Plugin }
