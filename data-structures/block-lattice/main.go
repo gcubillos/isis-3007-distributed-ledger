@@ -16,7 +16,7 @@ import (
 	"sync" // "unsafe"
 	"time"
 
-	"github.com/perlin-network/noise/crypto/ed25519"
+	"github.com/perlin-network/noise"
 	"github.com/perlin-network/noise/examples/chat/messages"
 	"github.com/perlin-network/noise/log"
 	"github.com/perlin-network/noise/network"
