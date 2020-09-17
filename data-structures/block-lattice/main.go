@@ -16,12 +16,12 @@ import (
 	"sync" // "unsafe"
 	"time"
 
-	"github.com/perlin-network/noise"
-	"github.com/perlin-network/noise/examples/chat/messages"
-	"github.com/perlin-network/noise/log"
-	"github.com/perlin-network/noise/network"
-	"github.com/perlin-network/noise/network/discovery"
-	"github.com/perlin-network/noise/types/opcode"
+	"github.com/perlin-network/noise@b4e6709f246c"
+	"github.com/perlin-network/noise@b4e6709f246c/examples/chat/messages"
+	"github.com/perlin-network/noise@b4e6709f246c/log"
+	"github.com/perlin-network/noise@b4e6709f246c/network"
+	"github.com/perlin-network/noise@b4e6709f246c/network/discovery"
+	"github.com/perlin-network/noise@b4e6709f246c/types/opcode"
 )
 
 type ChatPlugin struct{ *network.Plugin }

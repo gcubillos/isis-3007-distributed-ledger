@@ -4,6 +4,7 @@ github.com/gortc/stun v1.18.2 h1:lnkwrIY2epKbxug+l6wUy9xJw0e3/o3LTa2Y3Bl88NM=
 github.com/gortc/stun v1.18.2/go.mod h1:dZ0O/fYCkg9Z0Pvl6WDpNhRFTAU0X1CPOsJiZqn6EHo=
 github.com/perlin-network/noise v0.0.0-20190211165719-b4e6709f246c h1:BbuEHanMSS4WWMxXFiXBEg/biT+J1rCAoxew9Yy3rqM=
 github.com/perlin-network/noise v0.0.0-20190211165719-b4e6709f246c/go.mod h1:Y0PGJC6tF7035PcxRhqdM0uYo+yOXUjxJBMJjgIE6pA=
+github.com/perlin-network/noise v1.1.3 h1:x5lfqlvNLxYSzwRu5mjKyWusxOVg1wWEALT9XXVvCDI=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
