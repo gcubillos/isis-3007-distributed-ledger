@@ -1,0 +1,3 @@
+https://ethereum.stackexchange.com/questions/38121/why-did-ethereum-abandon-the-ghost-protocol
+https://ethereum.stackexchange.com/questions/13378/what-is-the-exact-longest-chain-rule-implemented-in-the-ethereum-homestead-p/13750#13750
+https://eth.wiki/en/fundamentals/design-rationale
