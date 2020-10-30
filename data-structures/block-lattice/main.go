@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	"bufio"	
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -16,12 +16,12 @@ import (
 	"sync" // "unsafe"
 	"time"
 
-	"github.com/perlin-network/noise@b4e6709f246c"
-	"github.com/perlin-network/noise@b4e6709f246c/examples/chat/messages"
-	"github.com/perlin-network/noise@b4e6709f246c/log"
-	"github.com/perlin-network/noise@b4e6709f246c/network"
-	"github.com/perlin-network/noise@b4e6709f246c/network/discovery"
-	"github.com/perlin-network/noise@b4e6709f246c/types/opcode"
+	"github.com/perlin-network/noise/crypto/ed25519"
+	"github.com/perlin-network/noise/examples/chat/messages"
+	"github.com/perlin-network/noise/log"
+	"github.com/perlin-network/noise/network"
+	"github.com/perlin-network/noise/network/discovery"
+	"github.com/perlin-network/noise/types/opcode"
 )
 
 type ChatPlugin struct{ *network.Plugin }
