@@ -1,129 +1,54 @@
 package main
 
-import (
-    "context"
-    "fmt"
-    "github.com/perlin-network/noise"
-    "strings"
-    "sync"
-)
+import "github.com/perlin-network/noise"
 
-// ChatMessage is an example struct that is registered on example nodes, and serialized/deserialized on-the-fly.
-type ChatMessage struct {
-    content string
+
+// Let there be nodes Alice and Bob.
+
+alice, err := noise.NewNode()
+if err != nil {
+panic(err)
 }
 
-// Marshal serializes a chat message into bytes.
-func (m ChatMessage) Marshal() []byte {
-    return []byte(m.content)
+bob, err := noise.NewNode()
+if err != nil {
+panic(err)
 }
 
-// Unmarshal deserializes a slice of bytes into a chat message, and returns an error should deserialization
-// fail, or the slice of bytes be malformed.
-func UnmarshalChatMessage(buf []byte) (ChatMessage, error) {
-    return ChatMessage{content: strings.ToValidUTF8(string(buf), "")}, nil
+// Gracefully release resources for Alice and Bob at the end of the example.
+
+defer alice.Close()
+defer bob.Close()
+
+// When Bob gets a message from Alice, print it out and respond to Alice with 'Hi Alice!'
+
+bob.Handle(func(ctx noise.HandlerContext) error {
+if !ctx.IsRequest() {
+return nil
 }
 
-// This example demonstrates messaging with registering Go types to be serialized/deserialized on-the-wire provided
-// marshal/unmarshal functions, how to decode serialized messages received from a peer, and how to send serialized
-// messages.
-func main() {
-    // Let there be Alice and Bob.
+fmt.Printf("Got a message from Alice: '%s'\n", string(ctx.Data()))
 
-    alice, err := noise.NewNode()
-    if err != nil {
-        panic(err)
-    }
+return ctx.Send([]byte("Hi Alice!"))
+})
 
-    bob, err := noise.NewNode()
-    if err != nil {
-        panic(err)
-    }
+// Have Alice and Bob start listening for new peers.
 
-    // Gracefully release resources for Alice and Bob at the end of the example.
-
-    defer alice.Close()
-    defer bob.Close()
-
-    // Register the ChatMessage type to Alice and Bob so they know how to serialize/deserialize
-    // them.
-
-    alice.RegisterMessage(ChatMessage{}, UnmarshalChatMessage)
-    bob.RegisterMessage(ChatMessage{}, UnmarshalChatMessage)
-
-    var wg sync.WaitGroup
-
-    // When Alice gets a ChatMessage from Bob, print it out.
-
-    alice.Handle(func(ctx noise.HandlerContext) error {
-        obj, err := ctx.DecodeMessage()
-        if err != nil {
-            return nil
-        }
-
-        msg, ok := obj.(ChatMessage)
-        if !ok {
-            return nil
-        }
-
-        fmt.Printf("Got a message from Bob: '%s'\n", msg.content)
-
-        wg.Done()
-
-        return nil
-    })
-
-    // When Bob gets a message from Alice, print it out.
-
-    bob.Handle(func(ctx noise.HandlerContext) error {
-        obj, err := ctx.DecodeMessage()
-        if err != nil {
-            return nil
-        }
-
-        msg, ok := obj.(ChatMessage)
-        if !ok {
-            return nil
-        }
-
-        fmt.Printf("Got a message from Alice: '%s'\n", msg.content)
-
-        wg.Done()
-
-        return nil
-    })
-
-    // Have Alice and Bob start listening for new peers.
-
-    if err := alice.Listen(); err != nil {
-        panic(err)
-    }
-
-    if err := bob.Listen(); err != nil {
-        panic(err)
-    }
-
-    // Have Alice send Bob a ChatMessage with 'Hi Bob!'
-
-    if err := alice.SendMessage(context.TODO(), bob.Addr(), ChatMessage{content: "Hi Bob!"}); err != nil {
-        panic(err)
-    }
-
-    // Wait until Bob receives the message from Alice.
-
-    wg.Add(1)
-    wg.Wait()
-
-    // Have Bob send Alice a ChatMessage with 'Hi Alice!'
-
-    if err := bob.SendMessage(context.TODO(), alice.Addr(), ChatMessage{content: "Hi Alice!"}); err != nil {
-        panic(err)
-    }
-
-    // Wait until Alice receives the message from Bob.
-
-    wg.Add(1)
-    wg.Wait()
-
+if err := alice.Listen(); err != nil {
+panic(err)
 }
- 
+
+if err := bob.Listen(); err != nil {
+panic(err)
+}
+
+// Have Alice send Bob a request with the message 'Hi Bob!'
+
+res, err := alice.Request(context.TODO(), bob.Addr(), []byte("Hi Bob!"))
+if err != nil {
+panic(err)
+}
+
+// Print out the response Bob got from Alice.
+
+fmt.Printf("Got a message from Bob: '%s'\n", string(res))
