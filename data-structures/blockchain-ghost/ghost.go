@@ -1,6 +1,11 @@
 package main
 
-import "time"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"strconv"
+	"time"
+)
 
 // *** Structs ***
 
@@ -9,7 +14,7 @@ Containing the blocks and the initial state
  */
 type ghost struct {
 	blocks []block
-	state map[int][]account
+	state []map[string]*account
 }
 
 // What a block in the network contains
@@ -33,8 +38,6 @@ type transaction struct {
 	senderSignature string
 	destination string
 	value float32
-
-
 }
 
 // What an account contains
@@ -51,8 +54,12 @@ type account struct{
 
 /* Creating a standard block in the network
  */
-func generateBlock(pTimestamp time.Time, pNonce int, pParent block) (rBlock block) {
-
+func generateBlock(pTimestamp time.Time, pNonce int, pParent *block) block {
+	var rBlock block
+	rBlock.parent= pParent
+	rBlock.timestamp = pTimestamp
+	rBlock.nonce = pNonce
+	rBlock.hashPreviousBlock =
 	return rBlock
 }
 
@@ -61,13 +68,23 @@ func generateBlock(pTimestamp time.Time, pNonce int, pParent block) (rBlock bloc
 // Checking that the timestamp of the block is greater than that of the previous block
 // Check that the proof of work on the block is valid.
 // Let S[0] be the state at the end of the previous block.
-// Suppose TX is the block's transaction list with n transactions. For all i in 0...n-1, set S[i+1] = APPLY(S[i],TX[i]) If any application returns an error, exit and return false.
+// Suppose TX is the block's transaction list with n transactions. For all i in 0...n-1,
+// set S[i+1] = APPLY(S[i],TX[i]) If any application returns an error, exit and return false.
 // Return true, and register S[n] as the state at the end of this block.
 
 func checkBlockValid(pBlock block) (isValid bool) {
-	isValid = false
-	if pBlock.nonce < 1 {
-		isValid = true
+	// Previous block exists and valid
+	if(pBlock.parent){
+
+	}
+	// Timestamp
+	if(pBlock.timestamp<pBlock.parent.timestamp){
+
+	}
+	// Proof of work
+	// State transition
+	for _,cTransaction := range pBlock.transactions {
+		stateTransition(,cTransaction)
 	}
 	return
 }
@@ -93,29 +110,41 @@ func stateTransition (pCurrentState map[string]*account, pTransaction transactio
 	}
 	// If the sum of the denominations If the sum of the denominations of all input UTXO is less than the sum of the
 	// denominations of all output UTXO, return an error.
-	// TODO: Decide whether to include several inputs and outputs
+	// TODO: Decide whether to include several inputs and outputs in a transaction
 	//if pTransaction
 
-	// Return S'
+	// Return S'. Apply the changes in the transaction
 	if err == "" {
-		pModifiedState[pTransaction.origin].balance -= pModifiedState[pTransaction.origin].balance - 1
-
+		pModifiedState[pTransaction.origin].balance -= pTransaction.value
+		pModifiedState[pTransaction.destination].balance += pTransaction.value
 	}
-
-
+	return pModifiedState,err
 }
+
+// Generate hash of a block. Using block header which includes timestamp, nonce,
+// previous block hash and root hash
+// TODO: Including root hash?
+// TODO: Convert hash to string?
+func calculateHash(pBlock block) (rHash string) {
+	bHeader := strconv.Itoa(pBlock.nonce) + pBlock.timestamp.String() + pBlock.hashPreviousBlock
+	hash := sha256.New()
+	hash.Write([]byte(bHeader))
+	rHash = hex.EncodeToString(hash.Sum(nil))
+	return rHash
+}
+
 
 // *** Execution of small scale tests ***
 func main(){
+	// Testing state transition
+
 	// Creating network with no blocks and capacity 1
-	var testGhost = ghost{make([]block,0,1),make(map[int][]account)}
+	var testGhost = ghost{make([]block,0,1),make([]map[string]*account,0)}
 	/* Creating the genesis block with the starting parameters for the network
 	 */
-	var genesisBlock =
-	var theGhost = new(ghost)
 	var theBlock = new(block)
 	theBlock.nonce = 2
-	theGhost.blocks = make([]block,0,1)
-	theGhost.blocks = append(theGhost.blocks, *theBlock)
+	testGhost.blocks = make([]block,0,1)
+	testGhost.blocks = append(testGhost.blocks, *theBlock)
 
 }
