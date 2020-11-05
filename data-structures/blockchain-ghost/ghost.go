@@ -11,10 +11,11 @@ import (
 
 /* Declaration of structure
 Containing the blocks and the initial state
- */
+*/
+// TODO: Including state in ghost struct?
 type ghost struct {
 	blocks []block
-	state []map[string]*account
+	// state  []map[string]*account
 }
 
 // What a block in the network contains
@@ -23,29 +24,29 @@ type ghost struct {
 // list of all of the transactions that have taken place since the previous block.
 
 type block struct {
-	timestamp time.Time
-	nonce int
+	timestamp         time.Time
+	nonce             int
 	hashPreviousBlock string
-	parent *block
-	uncles []block
-	transactions []transaction
+	parent            *block
+	uncles            []block
+	transactions      []transaction
+	endState          map[string]*account
 }
 
 // What a transaction ensues
 // A transaction is a request to move $X from A to B
 type transaction struct {
-	origin string
+	origin          string
 	senderSignature string
-	destination string
-	value float32
+	destination     string
+	value           float32
 }
 
 // What an account contains
 // Nonce counter used to make sure each transaction can only be processed once
 // account's current balance
-type account struct{
-
-	nonce int
+type account struct {
+	nonce   int
 	balance float32
 	address string
 }
@@ -54,12 +55,15 @@ type account struct{
 
 /* Creating a standard block in the network
  */
-func generateBlock(pTimestamp time.Time, pNonce int, pParent *block) block {
+func generateBlock(pTimestamp time.Time, pNonce int, pParent *block,
+	pTransactions []transaction, pEndState map[string]*account) block {
 	var rBlock block
-	rBlock.parent= pParent
+	rBlock.parent = pParent
 	rBlock.timestamp = pTimestamp
 	rBlock.nonce = pNonce
-	rBlock.hashPreviousBlock =
+	rBlock.hashPreviousBlock = calculateHash(*pParent)
+	rBlock.transactions = pTransactions
+	rBlock.endState = pEndState
 	return rBlock
 }
 
@@ -73,20 +77,43 @@ func generateBlock(pTimestamp time.Time, pNonce int, pParent *block) block {
 // Return true, and register S[n] as the state at the end of this block.
 
 func checkBlockValid(pBlock block) (isValid bool) {
+	isValid = true
 	// Previous block exists and valid
-	if(pBlock.parent){
-
+	// TODO: Revise implementation
+	if !checkBlockValid(*pBlock.parent) {
+		isValid = false
 	}
 	// Timestamp
-	if(pBlock.timestamp<pBlock.parent.timestamp){
-
+	if pBlock.timestamp.Before(pBlock.parent.timestamp) {
+		isValid = false
 	}
 	// Proof of work
-	// State transition
-	for _,cTransaction := range pBlock.transactions {
-		stateTransition(,cTransaction)
+
+	// State transition check
+	var initialState = pBlock.parent.endState
+	for i := 0; i < len(pBlock.transactions) && isValid; i++ {
+		currentState, err := stateTransition(initialState, pBlock.transactions[i])
+		if err != "" {
+			isValid = false
+		}
+		initialState = currentState
 	}
-	return
+	// Checking state
+	if len(pBlock.endState) == len(initialState) {
+		for i, _ := range pBlock.endState {
+			if !(pBlock.endState[i].nonce == initialState[i].nonce) &&
+							(pBlock.endState[i].balance == initialState[i].balance) &&
+							(pBlock.endState[i].address == initialState[i].address) {
+				isValid = false
+				break
+
+			}
+		}
+	} else {
+		isValid = false
+	}
+
+	return isValid
 }
 
 /* Checks validity of uncles
@@ -97,7 +124,8 @@ func checkUncleValidity(pBlock block) (isValid bool) {
 
 // State transition function. Checks validity of a change in state from a list of transactions
 // Syntax APPLY(S,TX) -> S'
-func stateTransition (pCurrentState map[string]*account, pTransaction transaction) (pModifiedState map[string]*account , err string){
+// TODO: Poner excepciones en vez de los returns que se tienen
+func stateTransition(pCurrentState map[string]*account, pTransaction transaction) (pModifiedState map[string]*account, err string) {
 	// If referenced UTXO  is not in S
 	err = ""
 	pModifiedState = pCurrentState
@@ -118,7 +146,7 @@ func stateTransition (pCurrentState map[string]*account, pTransaction transactio
 		pModifiedState[pTransaction.origin].balance -= pTransaction.value
 		pModifiedState[pTransaction.destination].balance += pTransaction.value
 	}
-	return pModifiedState,err
+	return pModifiedState, err
 }
 
 // Generate hash of a block. Using block header which includes timestamp, nonce,
@@ -133,18 +161,16 @@ func calculateHash(pBlock block) (rHash string) {
 	return rHash
 }
 
-
 // *** Execution of small scale tests ***
-func main(){
+func main() {
 	// Testing state transition
 
 	// Creating network with no blocks and capacity 1
-	var testGhost = ghost{make([]block,0,1),make([]map[string]*account,0)}
+	var testGhost = ghost{make([]block, 0, 1)}
 	/* Creating the genesis block with the starting parameters for the network
 	 */
-	var theBlock = new(block)
-	theBlock.nonce = 2
-	testGhost.blocks = make([]block,0,1)
-	testGhost.blocks = append(testGhost.blocks, *theBlock)
+	var theBlock = generateBlock(time.Now(),1,nil,nil,nil)
+
+	testGhost.blocks = make([]block, 0, 1)
 
 }
