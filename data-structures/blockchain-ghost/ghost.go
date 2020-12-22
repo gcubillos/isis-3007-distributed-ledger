@@ -15,7 +15,7 @@ Containing the blocks and the initial state
 // TODO: Including state in ghost struct?
 type ghost struct {
 	blocks []block
-	// state  []map[string]*account
+	state  []map[string]*account
 }
 
 // What a block in the network contains
@@ -79,7 +79,6 @@ func generateBlock(pTimestamp time.Time, pNonce int, pParent *block,
 func checkBlockValid(pBlock block) (isValid bool) {
 	isValid = true
 	// Previous block exists and valid
-	// TODO: Revise implementation
 	if !checkBlockValid(*pBlock.parent) {
 		isValid = false
 	}
@@ -88,6 +87,8 @@ func checkBlockValid(pBlock block) (isValid bool) {
 		isValid = false
 	}
 	// Proof of work
+	// Simplified version of proof of work
+	// TODO: Checking proof of work
 
 	// State transition check
 	var initialState = pBlock.parent.endState
@@ -106,7 +107,6 @@ func checkBlockValid(pBlock block) (isValid bool) {
 							(pBlock.endState[i].address == initialState[i].address) {
 				isValid = false
 				break
-
 			}
 		}
 	} else {
@@ -124,9 +124,8 @@ func checkUncleValidity(pBlock block) (isValid bool) {
 
 // State transition function. Checks validity of a change in state from a list of transactions
 // Syntax APPLY(S,TX) -> S'
-// TODO: Poner excepciones en vez de los returns que se tienen
 func stateTransition(pCurrentState map[string]*account, pTransaction transaction) (pModifiedState map[string]*account, err string) {
-	// If referenced UTXO  is not in S
+	// If referenced UTXO is not in S
 	err = ""
 	pModifiedState = pCurrentState
 	if pCurrentState[pTransaction.senderSignature].balance <= pTransaction.value {
@@ -136,10 +135,9 @@ func stateTransition(pCurrentState map[string]*account, pTransaction transaction
 	if pTransaction.origin != pTransaction.senderSignature {
 		err = err + "The provided signature does not match the owner of the UTXO\n"
 	}
-	// If the sum of the denominations If the sum of the denominations of all input UTXO is less than the sum of the
-	// denominations of all output UTXO, return an error.
-	// TODO: Decide whether to include several inputs and outputs in a transaction
-	//if pTransaction
+	// If the sum of the denominations of all input UTXO is less than the sum of the
+	// denominations of all output UTXO, return an error. Not necessary given that a
+	// transaction struct only contains one transaction.
 
 	// Return S'. Apply the changes in the transaction
 	if err == "" {
@@ -150,9 +148,7 @@ func stateTransition(pCurrentState map[string]*account, pTransaction transaction
 }
 
 // Generate hash of a block. Using block header which includes timestamp, nonce,
-// previous block hash and root hash
-// TODO: Including root hash?
-// TODO: Convert hash to string?
+// previous block hash
 func calculateHash(pBlock block) (rHash string) {
 	bHeader := strconv.Itoa(pBlock.nonce) + pBlock.timestamp.String() + pBlock.hashPreviousBlock
 	hash := sha256.New()
