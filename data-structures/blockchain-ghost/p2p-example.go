@@ -26,8 +26,7 @@ func main() {
 
     // Gracefully release resources for Alice and Bob at the end of the example.
 
-    defer alice.Close()
-    defer bob.Close()
+
 
     // When Bob gets a message from Alice, print it out and respond to Alice with 'Hi Alice!'
 
@@ -58,4 +57,5 @@ func main() {
     // Output:
     // Got a message from Alice: 'Hi Bob!'
     // Got a message from Bob: 'Hi Alice!'
+
 }

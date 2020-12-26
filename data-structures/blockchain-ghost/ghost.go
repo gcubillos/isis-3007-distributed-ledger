@@ -10,12 +10,12 @@ import (
 // *** Structs ***
 
 /* Declaration of structure
-Containing the blocks and the initial state
+Containing the blocks and the genesis state
 */
 // TODO: Including state in ghost struct?
 type ghost struct {
 	blocks []block
-	state  []map[string]*account
+	state  map[string]*account
 }
 
 // What a block in the network contains
@@ -118,6 +118,7 @@ func checkBlockValid(pBlock block) (isValid bool) {
 
 /* Checks validity of uncles
  */
+// TODO: Finish validity of uncles
 func checkUncleValidity(pBlock block) (isValid bool) {
 	return false
 }
@@ -144,6 +145,8 @@ func stateTransition(pCurrentState map[string]*account, pTransaction transaction
 		pModifiedState[pTransaction.origin].balance -= pTransaction.value
 		pModifiedState[pTransaction.destination].balance += pTransaction.value
 	}
+	// Creating the account in the state if it doesn't already exist
+	if pTransaction.destination not in 
 	return pModifiedState, err
 }
 
@@ -159,14 +162,40 @@ func calculateHash(pBlock block) (rHash string) {
 
 // *** Execution of small scale tests ***
 func main() {
-	// Testing state transition
+	// Creating genesis state
+
 
 	// Creating network with no blocks and capacity 1
 	var testGhost = ghost{make([]block, 0, 1)}
+
 	/* Creating the genesis block with the starting parameters for the network
 	 */
 	var theBlock = generateBlock(time.Now(),1,nil,nil,nil)
 
 	testGhost.blocks = make([]block, 0, 1)
+
+	// Creating test accounts
+	var testAccount1 = account{
+		nonce:   0,
+		balance: 0,
+		address: "172",
+	}
+	var testAccount2 = account{
+		nonce:   0,
+		balance: 4,
+		address: "174",
+	}
+
+	// Creating a state
+	var testState = make(map[string]*account);
+	// Inputting values
+	testState["0"] = &testAccount1;
+	testState["1"] = &testAccount2;
+
+
+	// Creating a transaction
+
+
+	// Testing state transition
 
 }
