@@ -31,7 +31,7 @@ func stateTransition(pCurrentState map[string]*account, pTransaction transaction
 	// transaction struct only contains one transaction.
 	// Creating the account in the state if it doesn't already exist
 	if _, ok := pModifiedState[pTransaction.destination]; !ok && err == "" {
-		createAccount(pTransaction.destination)
+		CreateAccount(pTransaction.destination)
 	}
 	// Return S'. Apply the changes in the transaction
 	if err == "" {
