@@ -1,4 +1,6 @@
 package main
 
-type aBlockChainNode struct {
+type blockchain struct {
+	Blocks []network.Block
+	State  map[string]int
 }
