@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/perlin-network/noise"
 	"github.com/perlin-network/noise/kademlia"
@@ -10,7 +11,6 @@ func main() {
 	// Let there be Alice, Bob, and Charlie.
 
 	alice, err := noise.NewNode()
-	fmt.Printf("", err)
 	if err != nil {
 		panic(err)
 	}
@@ -46,15 +46,15 @@ func main() {
 		panic(err)
 	}
 
-	//// Have Bob and Charlie learn about Alice. Bob and Charlie do not yet know of each other.
-	//
-	//if _, err := bob.Ping(context.TODO(), alice.Addr()); err != nil {
-	//	panic(err)
-	//}
-	//
-	//if _, err := charlie.Ping(context.TODO(), alice.Addr()); err != nil {
-	//	panic(err)
-	//}
+	// Have Bob and Charlie learn about Alice. Bob and Charlie do not yet know of each other.
+
+	if _, err := bob.Ping(context.TODO(), alice.Addr()); err != nil {
+		panic(err)
+	}
+
+	if _, err := charlie.Ping(context.TODO(), alice.Addr()); err != nil {
+		panic(err)
+	}
 
 	// Using Kademlia, Bob and Charlie will learn of each other. Alice, Bob, and Charlie should
 	// learn about each other once they run (*kademlia.Protocol).Discover().

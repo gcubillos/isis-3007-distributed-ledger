@@ -2,21 +2,21 @@ package ghost
 
 // What an account contains
 // Nonce counter used to make sure each transaction can only be processed once
-// account's current balance
-type account struct {
-	nonce   int
-	balance float32
-	address string
+// account's current Balance
+type Account struct {
+	Nonce   int
+	Balance float32
+	Address string
 }
 
 // *** Constructors ***
 
-// Create an account with balance 0
-func CreateAccount(pAddress string) account {
-	var rAccount account
-	rAccount.balance = 0
-	rAccount.address = pAddress
-	rAccount.nonce = 0
+// Create an account with Balance 0
+func CreateAccount(pAddress string) Account {
+	var rAccount Account
+	rAccount.Balance = 0
+	rAccount.Address = pAddress
+	rAccount.Nonce = 0
 	return rAccount
 }
 

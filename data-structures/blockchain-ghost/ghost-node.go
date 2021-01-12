@@ -7,37 +7,37 @@ import (
 
 // Declaration of node in the network
 // Contains the underlying data structure as well as the node from the noise library
-type ghostNode struct {
-	dataStructure ghost
-	node          *noise.Node
+type NodeGhost struct {
+	DataStructure ghost
+	Node          *noise.Node
 }
 
 // *** Constructors ***
 
 // Creating a node in the network
-func GenerateNode() ghostNode {
-	var rNode = ghostNode{}
+func GenerateNode() NodeGhost {
+	var rNode = NodeGhost{}
 	node, err := noise.NewNode()
 	check(err)
-	rNode.node = node
-	rNode.dataStructure = ghost{blocks: []block{}, state: make(map[string]*account)}
+	rNode.Node = node
+	rNode.DataStructure = ghost{Blocks: []Block{}, state: make(map[string]*Account)}
 	rNode.mining()
 	return rNode
 }
 
 // *** Methods ***
 
-/* Creating a standard block in the network
+/* Creating a standard Block in the network
  */
-func (*ghostNode) generateBlock(pNonce int, pParent *block,
-	pTransactions []transaction, pEndState map[string]*account) block {
-	var rBlock block
-	rBlock.parent = pParent
-	rBlock.timestamp = time.Now()
-	rBlock.nonce = pNonce
-	rBlock.hashPreviousBlock = calculateHash(*pParent)
-	rBlock.transactions = pTransactions
-	rBlock.endState = pEndState
+func (*NodeGhost) generateBlock(pNonce int, pParent *Block,
+	pTransactions []Transaction, pEndState map[string]*Account) Block {
+	var rBlock Block
+	rBlock.Parent = pParent
+	rBlock.Timestamp = time.Now()
+	rBlock.Nonce = pNonce
+	rBlock.HashPreviousBlock = pParent.calculateHash()
+	rBlock.Transactions = pTransactions
+	rBlock.EndState = pEndState
 	return rBlock
 }
 

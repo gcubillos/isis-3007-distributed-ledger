@@ -3,89 +3,89 @@ package ghost
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"strconv"
 	"time"
 )
 
-// What a block in the network contains
-// The network is intended to produce roughly one block every ten minutes, with each block
-// containing a timestamp, a nonce, a reference to (ie. hash of) the previous block and a
-// list of all of the transactions that have taken place since the previous block.
+// What a Block in the network contains
+// The network is intended to produce roughly one Block every ten minutes, with each Block
+// containing a Timestamp, a Nonce, a reference to (ie. Hash of) the previous Block and a
+// list of all of the Transactions that have taken place since the previous Block.
 
-type block struct {
-	timestamp         time.Time
-	nonce             int
-	hashPreviousBlock string
-	parent            *block
-	uncles            []block
-	transactions      []transaction
-	endState          map[string]*account
+type Block struct {
+	Timestamp         time.Time
+	Nonce             int
+	HashPreviousBlock string
+	Parent            *Block
+	Uncles            []Block
+	Transactions      []Transaction
+	EndState          map[string]*Account
 }
 
 // *** Constructors ***
 
 // *** Methods ***
-// Check that the block is valid
-// By checking if the previous block referenced by the block exists and is valid
-// Checking that the timestamp of the block is greater than that of the previous block
-// Check that the proof of work on the block is valid.
-// Let S[0] be the state at the end of the previous block.
-// Suppose TX is the block's transaction list with n transactions. For all i in 0...n-1,
+// Check that the Block is valid
+// By checking if the previous Block referenced by the Block exists and is valid
+// Checking that the Timestamp of the Block is greater than that of the previous Block
+// Check that the proof of work on the Block is valid.
+// Let S[0] be the state at the end of the previous Block.
+// Suppose TX is the Block's Transaction list with n Transactions. For all i in 0...n-1,
 // set S[i+1] = APPLY(S[i],TX[i]) If any application returns an error, exit and return false.
-// Return true, and register S[n] as the state at the end of this block.
+// Return true, and register S[n] as the state at the end of this Block.
 
-func (pBlock *block) checkBlockValid() (isValid bool) {
-	isValid = true
-	// Previous block exists and valid
-	if !pBlock.parent.checkBlockValid() {
-		isValid = false
+func (pBlock *Block) checkBlockValid() (err error) {
+	err = nil
+	// Previous Block exists and valid
+	if nil != pBlock.Parent.checkBlockValid() {
+		err = errors.New("previous Block isn't valid")
 	}
 	// Timestamp
-	if pBlock.timestamp.Before(pBlock.parent.timestamp) {
-		isValid = false
+	if pBlock.Timestamp.Before(pBlock.Parent.Timestamp) {
+		err = errors.New("timestamp of previous Block isn't valid")
 	}
 	// Proof of work
 	// Simplified version of proof of work
-	// TODO: Checking proof of work
+	// TODO: Including proof of work?
 
 	// State transition check
-	var initialState = pBlock.parent.endState
-	for i := 0; i < len(pBlock.transactions) && isValid; i++ {
-		currentState, err := stateTransition(initialState, pBlock.transactions[i])
-		if err != "" {
-			isValid = false
+	var initialState = pBlock.Parent.EndState
+	for i := 0; i < len(pBlock.Transactions); i++ {
+		if currentState, err := stateTransition(initialState, pBlock.Transactions[i]); err != nil {
+			initialState = currentState
+		} else {
+			break
 		}
-		initialState = currentState
 	}
 	// Checking state
-	if len(pBlock.endState) == len(initialState) {
-		for i, _ := range pBlock.endState {
-			if !(pBlock.endState[i].nonce == initialState[i].nonce) &&
-				(pBlock.endState[i].balance == initialState[i].balance) &&
-				(pBlock.endState[i].address == initialState[i].address) {
-				isValid = false
+	if len(pBlock.EndState) == len(initialState) {
+		for i := range pBlock.EndState {
+			if !(pBlock.EndState[i].Nonce == initialState[i].Nonce) &&
+				(pBlock.EndState[i].Balance == initialState[i].Balance) &&
+				(pBlock.EndState[i].Address == initialState[i].Address) {
+				err = errors.New("there is an error with the state")
 				break
 			}
 		}
 	} else {
-		isValid = false
+		err = errors.New("state doesn't match")
 	}
 
-	return isValid
+	return err
 }
 
 //Checks validity of uncles
 //TODO: Finish validity of uncles
-func (pBlock *block) checkUncleValidity() (isValid bool) {
+func (pBlock *Block) checkUncleValidity() (isValid bool) {
 	return false
 }
 
-// Generate hash of a block. Using block header which includes timestamp, nonce,
-// previous block hash
-func calculateHash(pBlock block) (rHash string) {
-	bHeader := strconv.Itoa(pBlock.nonce) + pBlock.timestamp.String() + pBlock.hashPreviousBlock
-	hash := sha256.New()
-	hash.Write([]byte(bHeader))
-	rHash = hex.EncodeToString(hash.Sum(nil))
-	return rHash
+// Generate Hash of a Block. Using Block header which includes Timestamp, Nonce,
+// previous Block Hash
+func (pBlock *Block) calculateHash() string {
+	bHeader := strconv.Itoa(pBlock.Nonce) + pBlock.Timestamp.String() + pBlock.HashPreviousBlock
+	Hash := sha256.New()
+	Hash.Write([]byte(bHeader))
+	return hex.EncodeToString(Hash.Sum(nil))
 }

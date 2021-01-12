@@ -19,6 +19,8 @@ func main() {
 		ghost.CreateAccount("123" + strconv.Itoa(i))
 	}
 	fmt.Printf("", users)
+	// Creating new nodes
+	ghost.GenerateNode()
 
 	//// Creating a network node
 	//nodeA := ghost.GenerateNode()
