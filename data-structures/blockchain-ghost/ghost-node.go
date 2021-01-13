@@ -45,6 +45,8 @@ func (*NodeGhost) generateBlock(pNonce int, pParent *Block,
 	rBlock.HashPreviousBlock = pParent.calculateHash()
 	rBlock.Transactions = pTransactions
 	rBlock.EndState = pEndState
+	// Proof of work
+	// TODO: Including Simplified version of proof of work
 	return rBlock
 }
 

@@ -29,12 +29,12 @@ func stateTransition(pCurrentState map[string]*Account, pTransaction Transaction
 	//}
 	// If the sum of the denominations of all input UTXO is less than the sum of the
 	// denominations of all output UTXO, return an error. Not necessary given that a
-	// Transaction struct only contains one Transaction.
+	// Transactions struct only contains one Transactions.
 	// Creating the Account in the State if it doesn't already exist
 	if _, ok := pModifiedState[pTransaction.Destination]; !ok && err == nil {
 		CreateAccount(pTransaction.Destination)
 	}
-	// Return S'. Apply the changes in the Transaction
+	// Return S'. Apply the changes in the Transactions
 	if err == nil {
 		pModifiedState[pTransaction.Origin].Balance -= pTransaction.Value
 		pModifiedState[pTransaction.Destination].Balance += pTransaction.Value

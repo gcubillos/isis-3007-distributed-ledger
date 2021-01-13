@@ -15,10 +15,10 @@ var mutex = &sync.Mutex{}
 func main() {
 	t := time.Now()
 	genesisBlock := blockchain.Block{}
-	genesisBlock = blockchain.Block{0, t.String(), 0, blockchain.CalculateHash(genesisBlock), ""}
+	genesisBlock = blockchain.Block{t, blockchain.CalculateHash(genesisBlock), "",0,nil,1}
 
 	mutex.Lock()
-	blockchain.Blockchain = append(blockchain.Blockchain, genesisBlock)
+	blockchain. = append(blockchain.Blockchain, genesisBlock)
 	mutex.Unlock()
 
 	// Create a first node in the network

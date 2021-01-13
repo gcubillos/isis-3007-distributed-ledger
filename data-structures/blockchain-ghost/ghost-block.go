@@ -31,23 +31,19 @@ type Block struct {
 // Checking that the Timestamp of the Block is greater than that of the previous Block
 // Check that the proof of work on the Block is valid.
 // Let S[0] be the state at the end of the previous Block.
-// Suppose TX is the Block's Transaction list with n Transactions. For all i in 0...n-1,
+// Suppose TX is the Block's Transactions list with n Transactions. For all i in 0...n-1,
 // set S[i+1] = APPLY(S[i],TX[i]) If any application returns an error, exit and return false.
 // Return true, and register S[n] as the state at the end of this Block.
 
-func (pBlock *Block) checkBlockValid() (err error) {
-	err = nil
+func (pBlock *Block) IsBlockValid() (bool, error) {
 	// Previous Block exists and valid
-	if nil != pBlock.Parent.checkBlockValid() {
-		err = errors.New("previous Block isn't valid")
+	if condition, _ := pBlock.Parent.IsBlockValid(); !condition {
+		return false, errors.New("previous Block isn't valid")
 	}
 	// Timestamp
 	if pBlock.Timestamp.Before(pBlock.Parent.Timestamp) {
-		err = errors.New("timestamp of previous Block isn't valid")
+		return false, errors.New("timestamp of previous Block isn't valid")
 	}
-	// Proof of work
-	// Simplified version of proof of work
-	// TODO: Including proof of work?
 
 	// State transition check
 	var initialState = pBlock.Parent.EndState
@@ -64,15 +60,14 @@ func (pBlock *Block) checkBlockValid() (err error) {
 			if !(pBlock.EndState[i].Nonce == initialState[i].Nonce) &&
 				(pBlock.EndState[i].Balance == initialState[i].Balance) &&
 				(pBlock.EndState[i].Address == initialState[i].Address) {
-				err = errors.New("there is an error with the state")
-				break
+				return false, errors.New("there is an error with the state")
 			}
 		}
 	} else {
-		err = errors.New("state doesn't match")
+		return false, errors.New("state doesn't match")
 	}
 
-	return err
+	return true, nil
 }
 
 //Checks validity of uncles

@@ -242,7 +242,7 @@ func main() {
 	// }
 
 	// Size Test
-	// fmt.Println("Size of Tangle - Transaction:  ", unsafe.Sizeof(net.Tangle.Transactions[0]))
+	// fmt.Println("Size of Tangle - Transactions:  ", unsafe.Sizeof(net.Tangle.Transactions[0]))
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -327,7 +327,7 @@ func getOutboundIP() string {
 	return localAddr.IP.String()
 }
 
-// create a new Transaction using previous Transactions index
+// create a new Transactions using previous Transactions index
 func generateTransaction(lastTransaction network.Transaction, Operation string, address string, timeSent time.Time) network.Transaction {
 
 	var newTransaction network.Transaction

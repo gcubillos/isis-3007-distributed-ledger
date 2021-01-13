@@ -19,7 +19,6 @@ import (
 	"github.com/perlin-network/noise"
 
 	"log"
-	 
 )
 
 type ChatPlugin struct{ *network.Plugin }
