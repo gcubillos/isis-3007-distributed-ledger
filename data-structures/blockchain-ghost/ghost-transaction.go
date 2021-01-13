@@ -6,5 +6,5 @@ type Transaction struct {
 	Origin          string
 	SenderSignature string
 	Destination     string
-	Value           float32
+	Value           float64
 }

@@ -5,7 +5,7 @@ package ghost
 // account's current Balance
 type Account struct {
 	Nonce   int
-	Balance float32
+	Balance float64
 	Address string
 }
 

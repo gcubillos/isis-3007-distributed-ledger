@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	ghost "github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain-ghost"
 	"strconv"
 	"strings"
@@ -30,7 +29,7 @@ type Block struct {
 // What the blockchain data structure contains
 type Blockchain struct {
 	Blocks []Block
-	State  map[string]int
+	State  map[string]float64
 }
 
 // Variable containing the current version of the blockchain
@@ -60,16 +59,12 @@ func GenerateBlock(oldBlock Block, pTransactions []ghost.Transaction) Block {
 	newBlock.Difficulty = difficulty
 	for i := 0; ; i++ {
 		newBlock.Nonce = i
-		if !isHashValid(CalculateHash(newBlock), newBlock.Difficulty) {
-			fmt.Println(CalculateHash(newBlock), " do more work!")
-			time.Sleep(time.Second)
+		if !IsHashValid(CalculateHash(newBlock), newBlock.Difficulty) {
 			continue
 		} else {
-			fmt.Println(CalculateHash(newBlock), " work done!")
 			newBlock.Hash = CalculateHash(newBlock)
 			break
 		}
-
 	}
 
 	return newBlock
@@ -91,10 +86,13 @@ func IsBlockValid(newBlock, oldBlock Block) (bool, error) {
 		return false, errors.New("calculated hash doesn't match")
 	}
 	// Checking proof of work
-	if !isHashValid(newBlock.Hash, newBlock.Difficulty) {
+	if !IsHashValid(newBlock.Hash, newBlock.Difficulty) {
 		return false, errors.New("the proof of work is not valid")
 	}
 	// TODO: Checking transactions validity
+	if stateTransition(newBlock.Transactions) {
+		return false, errors.New("the transactions are inconsistent with the state")
+	}
 	// TODO: register state
 
 	return true, nil
@@ -102,7 +100,7 @@ func IsBlockValid(newBlock, oldBlock Block) (bool, error) {
 
 // Checks whether the hash is valid by checking if it starts with the given number of zeroes specified in the difficulty
 // TODO: Check whether it influences if the block has more than the difficulty number of leading zeroes. Does it matter?
-func isHashValid(hash string, difficulty int) bool {
+func IsHashValid(hash string, difficulty int) bool {
 	prefix := strings.Repeat("0", difficulty)
 	return strings.HasPrefix(hash, prefix)
 }
@@ -112,4 +110,25 @@ func ReplaceChain(newBlocks []Block) {
 	if len(newBlocks) > len(CurrentBlockchain.Blocks) {
 		CurrentBlockchain.Blocks = newBlocks
 	}
+}
+
+// TODO: Manage concurrency
+
+// TODO: Performing a transaction
+// Receives a state and then performs the transaction and returns the modified state
+func stateTransition(pTransactions []ghost.Transaction, initialState map[string]float64) bool {
+	for _, v := range pTransactions {
+		// TODO: Verifying signature, doing it in the same main function?
+		// Signature of sender does not match the owner of the UTXO
+		// UTXO is not in the state
+		if CurrentBlockchain.State[v.SenderSignature] < v.Value {
+			return false
+		} else {
+			// Update state
+
+		}
+
+	}
+	return true
+
 }
