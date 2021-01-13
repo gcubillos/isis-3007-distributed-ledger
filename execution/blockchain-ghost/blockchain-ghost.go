@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	ghost "github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain-ghost"
 	"strconv"
@@ -20,7 +21,21 @@ func main() {
 	}
 	fmt.Printf("", users)
 	// Creating new nodes
-	ghost.GenerateNode()
+	alice := ghost.GenerateNode()
+
+	bob := ghost.GenerateNode()
+
+	carl := ghost.GenerateNode()
+
+	if _, err := bob.Node.Ping(context.TODO(), alice.Node.Addr()); err != nil {
+		panic(err)
+	}
+
+	if _, err := bob.Node.Ping(context.TODO(), carl.Node.Addr()); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("", len(alice.No))
 
 	//// Creating a network node
 	//nodeA := ghost.GenerateNode()
