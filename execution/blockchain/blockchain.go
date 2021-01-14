@@ -28,8 +28,12 @@ func main() {
 		}
 
 	}
+	theBlockchain := blockchain.Blockchain{
+		Blocks: []blockchain.Block{},
+		State:  make(map[string]float64, 0),
+	}
 	mutex.Lock()
-	blockchain.CurrentBlockchain.Blocks = append(blockchain.CurrentBlockchain.Blocks, genesisBlock)
+	theBlockchain.Blocks = append(theBlockchain.Blocks, genesisBlock)
 	mutex.Unlock()
 
 	// Create a first node in the network
@@ -45,7 +49,14 @@ func main() {
 			return nil
 		}
 
-		fmt.Printf("Got a message from Alice: '%s'\n", string(ctx.Data()))
+		anotherBlockchain := blockchain.Blockchain{
+			Blocks: make([]blockchain.Block, 0),
+			State:  make(map[string]float64, 0),
+		}
+		if err := json.Unmarshal(ctx.Data(), &anotherBlockchain); err != nil {
+			fmt.Printf("", err.Error())
+		}
+		fmt.Printf("", anotherBlockchain.Blocks)
 
 		return nil
 	})
@@ -55,8 +66,6 @@ func main() {
 			return nil
 		}
 
-		fmt.Printf("Got a message from Bob: '%s'\n", string(ctx.Data()))
-
 		return nil
 	})
 
@@ -64,12 +73,31 @@ func main() {
 	check(err)
 	err = bob.Listen()
 	check(err)
-	bytes, err := json.Marshal(genesisBlock)
+	// Creating a transaction
+	exampleTransaction := ghost.Transaction{
+		Origin:          alice.Addr(),
+		SenderSignature: alice.ID().Address,
+		Destination:     bob.Addr(),
+		Value:           5,
+	}
+	transactionList := make([]ghost.Transaction, 1, 1)
+	transactionList[0] = exampleTransaction
+	blockchain.CurrentBlockchain = theBlockchain
+	blockchain.CurrentBlockchain.State[alice.Addr()] = 5
+	theBlock := blockchain.GenerateBlock(genesisBlock, transactionList)
+	if v, err := blockchain.IsBlockValid(theBlock, genesisBlock); v {
+		mutex.Lock()
+		blockchain.CurrentBlockchain.Blocks = append(blockchain.CurrentBlockchain.Blocks, theBlock)
+		mutex.Unlock()
+	} else {
+		panic(err)
+	}
+
+	bytes, err := json.Marshal(blockchain.CurrentBlockchain)
 	res, err := alice.Request(context.TODO(), bob.Addr(), bytes)
 
 	fmt.Printf("", res)
 
-	fmt.Printf("", alice.Addr(), alice.ID())
 }
 
 func check(err error) {

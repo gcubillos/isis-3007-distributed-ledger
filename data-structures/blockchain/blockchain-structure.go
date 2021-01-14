@@ -51,12 +51,11 @@ func GenerateBlock(oldBlock Block, pTransactions []ghost.Transaction) Block {
 
 	var newBlock Block
 
-	// TODO: Remove printing in console
 	newBlock.Timestamp = time.Now()
 	newBlock.Transactions = pTransactions
-	// TODO: Apply transactions to the state
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Difficulty = difficulty
+	// Calculating the hash
 	for i := 0; ; i++ {
 		newBlock.Nonce = i
 		if !IsHashValid(CalculateHash(newBlock), newBlock.Difficulty) {
@@ -89,11 +88,9 @@ func IsBlockValid(newBlock, oldBlock Block) (bool, error) {
 	if !IsHashValid(newBlock.Hash, newBlock.Difficulty) {
 		return false, errors.New("the proof of work is not valid")
 	}
-	// TODO: Checking transactions validity
-	if stateTransition(newBlock.Transactions) {
+	if !verifyStateTransition(newBlock.Transactions, CurrentBlockchain.State) {
 		return false, errors.New("the transactions are inconsistent with the state")
 	}
-	// TODO: register state
 
 	return true, nil
 }
@@ -106,29 +103,52 @@ func IsHashValid(hash string, difficulty int) bool {
 }
 
 // TODO: Change consensus algorithm?
-func ReplaceChain(newBlocks []Block) {
-	if len(newBlocks) > len(CurrentBlockchain.Blocks) {
-		CurrentBlockchain.Blocks = newBlocks
+func ReplaceChain(newBlockchain Blockchain) {
+	if len(newBlockchain.Blocks) > len(CurrentBlockchain.Blocks) {
+		CurrentBlockchain.Blocks = newBlockchain.Blocks
 	}
 }
 
 // TODO: Manage concurrency
 
-// TODO: Performing a transaction
-// Receives a state and then performs the transaction and returns the modified state
-func stateTransition(pTransactions []ghost.Transaction, initialState map[string]float64) bool {
+// Receives a state and then performs the transactions and modifies the given state
+func stateTransition(pTransactions []ghost.Transaction, initialState map[string]float64) {
+	for _, v := range pTransactions {
+		// Update state
+		initialState[v.Origin] -= v.Value
+		// Checking that the recipient of the UTXO exists. If not, create it
+		if _, ok := initialState[v.Destination]; ok {
+			initialState[v.Destination] += v.Value
+		} else {
+			initialState[v.Destination] = v.Value
+		}
+	}
+
+}
+
+// Receives a state and then performs the transactions and returns the modified state when it is valid
+func verifyStateTransition(pTransactions []ghost.Transaction, initialState map[string]float64) bool {
+	modifiedState := initialState
 	for _, v := range pTransactions {
 		// TODO: Verifying signature, doing it in the same main function?
+		// TODO: Change it so that it verifies the signature
 		// Signature of sender does not match the owner of the UTXO
 		// UTXO is not in the state
-		if CurrentBlockchain.State[v.SenderSignature] < v.Value {
+		if CurrentBlockchain.State[v.Origin] < v.Value {
 			return false
 		} else {
 			// Update state
-
+			modifiedState[v.Origin] -= v.Value
+			// Checking that the recipient of the UTXO exists. If not, create it
+			if _, ok := modifiedState[v.Destination]; ok {
+				modifiedState[v.Destination] += v.Value
+			} else {
+				modifiedState[v.Destination] = v.Value
+			}
 		}
-
 	}
+	// Update the final state
+	initialState = modifiedState
 	return true
 
 }
