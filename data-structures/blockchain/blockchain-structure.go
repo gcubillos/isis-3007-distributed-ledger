@@ -32,9 +32,6 @@ type Blockchain struct {
 	State  map[string]float64
 }
 
-// Variable containing the current version of the blockchain
-var CurrentBlockchain Blockchain
-
 // *** Methods ***
 
 // Generate Hash of a block
@@ -70,7 +67,7 @@ func GenerateBlock(oldBlock Block, pTransactions []ghost.Transaction) Block {
 }
 
 // Function that checks whether a block is valid
-func IsBlockValid(newBlock, oldBlock Block) (bool, error) {
+func (pBlockchain *Blockchain) IsBlockValid(newBlock, oldBlock Block) (bool, error) {
 	// TODO: Previous block exists and is valid
 	// Timestamp
 	if !oldBlock.Timestamp.Before(newBlock.Timestamp) {
@@ -88,7 +85,7 @@ func IsBlockValid(newBlock, oldBlock Block) (bool, error) {
 	if !IsHashValid(newBlock.Hash, newBlock.Difficulty) {
 		return false, errors.New("the proof of work is not valid")
 	}
-	if !verifyStateTransition(newBlock.Transactions, CurrentBlockchain.State) {
+	if !pBlockchain.verifyStateTransition(newBlock.Transactions, pBlockchain.State) {
 		return false, errors.New("the transactions are inconsistent with the state")
 	}
 
@@ -103,9 +100,9 @@ func IsHashValid(hash string, difficulty int) bool {
 }
 
 // TODO: Change consensus algorithm?
-func ReplaceChain(newBlockchain Blockchain) {
-	if len(newBlockchain.Blocks) > len(CurrentBlockchain.Blocks) {
-		CurrentBlockchain.Blocks = newBlockchain.Blocks
+func (pBlockchain *Blockchain) ReplaceChain(newBlockchain Blockchain) {
+	if len(newBlockchain.Blocks) > len(pBlockchain.Blocks) {
+		pBlockchain.Blocks = newBlockchain.Blocks
 	}
 }
 
@@ -127,14 +124,14 @@ func stateTransition(pTransactions []ghost.Transaction, initialState map[string]
 }
 
 // Receives a state and then performs the transactions and returns the modified state when it is valid
-func verifyStateTransition(pTransactions []ghost.Transaction, initialState map[string]float64) bool {
+func (pBlockchain *Blockchain) verifyStateTransition(pTransactions []ghost.Transaction, initialState map[string]float64) bool {
 	modifiedState := initialState
 	for _, v := range pTransactions {
 		// TODO: Verifying signature, doing it in the same main function?
 		// TODO: Change it so that it verifies the signature
 		// Signature of sender does not match the owner of the UTXO
 		// UTXO is not in the state
-		if CurrentBlockchain.State[v.Origin] < v.Value {
+		if pBlockchain.State[v.Origin] < v.Value {
 			return false
 		} else {
 			// Update state
