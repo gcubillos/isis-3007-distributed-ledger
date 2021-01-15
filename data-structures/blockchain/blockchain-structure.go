@@ -43,29 +43,6 @@ func CalculateHash(block Block) string {
 	return hex.EncodeToString(hashed)
 }
 
-// Creates a block
-func GenerateBlock(oldBlock Block, pTransactions []ghost.Transaction) Block {
-
-	var newBlock Block
-
-	newBlock.Timestamp = time.Now()
-	newBlock.Transactions = pTransactions
-	newBlock.PrevHash = oldBlock.Hash
-	newBlock.Difficulty = difficulty
-	// Calculating the hash
-	for i := 0; ; i++ {
-		newBlock.Nonce = i
-		if !IsHashValid(CalculateHash(newBlock), newBlock.Difficulty) {
-			continue
-		} else {
-			newBlock.Hash = CalculateHash(newBlock)
-			break
-		}
-	}
-
-	return newBlock
-}
-
 // Function that checks whether a block is valid
 func (pBlockchain *Blockchain) IsBlockValid(newBlock, oldBlock Block) (bool, error) {
 	// TODO: Previous block exists and is valid
