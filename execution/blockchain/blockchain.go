@@ -12,7 +12,7 @@ var mutex = &sync.Mutex{}
 func main() {
 	t := time.Now()
 	genesisBlock := blockchain.Block{}
-	genesisBlock = blockchain.Block{t, blockchain.CalculateHash(genesisBlock), "", 0, make([]ghost.Transaction, 0), 1}
+	genesisBlock = blockchain.Block{Timestamp: t, Hash: blockchain.CalculateHash(genesisBlock), Transactions: make([]ghost.Transaction, 0), Difficulty: 1}
 	// Validate created block
 	for i := 0; ; i++ {
 		genesisBlock.Nonce = i

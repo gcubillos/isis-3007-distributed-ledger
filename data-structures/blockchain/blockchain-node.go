@@ -50,11 +50,11 @@ func CreateNode(pGenesisBlock Block, pNode *noise.Node) NodeBlockchain {
 			State:  make(map[string]float64, 0),
 		}
 		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err != nil {
-			fmt.Printf("trouble unmarshalling", err.Error())
+			fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain.Blocks)
 		} else {
 			theNode.DataStructure.ReplaceChain(receivedBlockchain)
 		}
-		fmt.Printf("current structure", theNode.DataStructure)
+		fmt.Printf("current structure CreateNode %v \n", theNode.DataStructure)
 
 		return nil
 	})
@@ -63,7 +63,8 @@ func CreateNode(pGenesisBlock Block, pNode *noise.Node) NodeBlockchain {
 	check(networkNode.Listen())
 
 	// Ping the provided node in the network
-	networkNode.Ping(context.TODO(), pNode.Addr())
+	_, err = networkNode.Ping(context.TODO(), pNode.Addr())
+	check(err)
 	// Discover the other nodes present in the network at the moment
 	ka.Discover()
 	// Assign the network node to the node
@@ -99,11 +100,11 @@ func CreateInitialNode(pGenesisBlock Block) NodeBlockchain {
 			State:  make(map[string]float64, 0),
 		}
 		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err != nil {
-			fmt.Printf("trouble unmarshalling", err.Error())
+			fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain)
 		} else {
 			theNode.DataStructure.ReplaceChain(receivedBlockchain)
 		}
-		fmt.Printf("current structure", theNode.DataStructure)
+		fmt.Printf("current structure InitialNode %v \n", theNode.DataStructure)
 
 		return nil
 	})
@@ -150,7 +151,8 @@ func (pNode *NodeBlockchain) GenerateBlock(oldBlock Block, pTransactions []ghost
 		check(err)
 		// Broadcast the blockchain to the network
 		for _, v := range theNode.Node.Outbound() {
-			theNode.Node.Send(context.TODO(), v.ID().Address, bytes)
+			err = theNode.Node.Send(context.TODO(), v.ID().Address, bytes)
+			check(err)
 		}
 	}
 
