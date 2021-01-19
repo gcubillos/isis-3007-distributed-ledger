@@ -151,7 +151,7 @@ func (pNode *NodeBlockchain) GenerateBlock(oldBlock Block, pTransactions []ghost
 		check(err)
 		// Broadcast the blockchain to the network
 		for _, v := range theNode.Node.Outbound() {
-			err = theNode.Node.Send(context.TODO(), v.ID().Address, bytes)
+			_, err = theNode.Node.Request(context.TODO(), v.ID().Address, bytes)
 			check(err)
 		}
 	}

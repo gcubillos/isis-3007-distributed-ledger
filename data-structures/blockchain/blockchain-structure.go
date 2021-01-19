@@ -45,28 +45,28 @@ func CalculateHash(block Block) string {
 
 // Function that checks whether a block is valid
 func (pBlockchain *Blockchain) IsBlockValid(newBlock, oldBlock Block) (bool, error) {
-	// TODO: Previous block exists and is valid
+	switch true {
+	// Previous block exists in the blockchain. It is assumed it is valid
+	case oldBlock.Hash != pBlockchain.Blocks[len(pBlockchain.Blocks)-1].Hash:
+		return false, errors.New("oldBlock's hash doesn't seem to match the latest block in the blockchain")
 	// Timestamp
-	if !oldBlock.Timestamp.Before(newBlock.Timestamp) {
+	case !oldBlock.Timestamp.Before(newBlock.Timestamp):
 		return false, errors.New("timestamp is not valid")
-	}
 	// Previous block hash comparison
-	if oldBlock.Hash != newBlock.PrevHash {
+	case oldBlock.Hash != newBlock.PrevHash:
 		return false, errors.New("hash of previous block doesn't match")
-	}
 	// Does the corresponding hash match
-	if CalculateHash(newBlock) != newBlock.Hash {
+	case CalculateHash(newBlock) != newBlock.Hash:
 		return false, errors.New("calculated hash doesn't match")
-	}
 	// Checking proof of work
-	if !IsHashValid(newBlock.Hash, newBlock.Difficulty) {
+	case !IsHashValid(newBlock.Hash, newBlock.Difficulty):
 		return false, errors.New("the proof of work is not valid")
-	}
-	if !pBlockchain.verifyStateTransition(newBlock.Transactions, pBlockchain.State) {
+	case !pBlockchain.verifyStateTransition(newBlock.Transactions, pBlockchain.State):
 		return false, errors.New("the transactions are inconsistent with the state")
+	default:
+		return true, nil
 	}
 
-	return true, nil
 }
 
 // Checks whether the hash is valid by checking if it starts with the given number of zeroes specified in the difficulty
@@ -84,22 +84,6 @@ func (pBlockchain *Blockchain) ReplaceChain(newBlockchain Blockchain) {
 }
 
 // TODO: Manage concurrency
-
-// Receives a state and then performs the transactions and modifies the given state
-func stateTransition(pTransactions []ghost.Transaction, initialState map[string]float64) {
-	for _, v := range pTransactions {
-		// Update state
-		initialState[v.Origin] -= v.Value
-		// Checking that the recipient of the UTXO exists. If not, create it
-		if _, ok := initialState[v.Destination]; ok {
-			initialState[v.Destination] += v.Value
-		} else {
-			initialState[v.Destination] = v.Value
-		}
-	}
-
-}
-
 // Receives a state and then performs the transactions and returns the modified state when it is valid
 func (pBlockchain *Blockchain) verifyStateTransition(pTransactions []ghost.Transaction, initialState map[string]float64) bool {
 	modifiedState := initialState
