@@ -31,6 +31,8 @@ func CreateNode(pGenesisBlock Block, pNode *noise.Node) NodeBlockchain {
 		DataStructure: Blockchain{[]Block{pGenesisBlock}, make(map[string]float64, 0)},
 		Node:          nil,
 	}
+	// For simplicity a "main" account will be created that contains infinite values
+	theNode.DataStructure.State["main"] = 10
 	// Create network node
 	networkNode, err := noise.NewNode()
 	check(err)
@@ -65,6 +67,7 @@ func CreateNode(pGenesisBlock Block, pNode *noise.Node) NodeBlockchain {
 	// Ping the provided node in the network
 	_, err = networkNode.Ping(context.TODO(), pNode.Addr())
 	check(err)
+
 	// Discover the other nodes present in the network at the moment
 	ka.Discover()
 	// Assign the network node to the node
@@ -81,6 +84,8 @@ func CreateInitialNode(pGenesisBlock Block) NodeBlockchain {
 		DataStructure: Blockchain{[]Block{pGenesisBlock}, make(map[string]float64, 0)},
 		Node:          nil,
 	}
+	// For simplicity a "main" account will be created that contains infinite values
+	theNode.DataStructure.State["main"] = 10
 	// Create network node
 	networkNode, err := noise.NewNode()
 	check(err)
@@ -99,6 +104,7 @@ func CreateInitialNode(pGenesisBlock Block) NodeBlockchain {
 			Blocks: make([]Block, 0),
 			State:  make(map[string]float64, 0),
 		}
+		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method
 		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err != nil {
 			fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain)
 		} else {
@@ -124,6 +130,16 @@ func (pNode *NodeBlockchain) GenerateBlock(oldBlock Block, pTransactions []ghost
 
 	var newBlock Block
 
+	// Adding the transaction that gives the "miner" a reward for doing the work
+	rewardTransaction := ghost.Transaction{
+		Origin:          "main",
+		SenderSignature: "main",
+		Destination:     pNode.Node.Addr(),
+		Value:           1,
+	}
+	pTransactions = append(pTransactions, rewardTransaction)
+
+	// Including information relevant to the block
 	newBlock.Timestamp = time.Now()
 	newBlock.Transactions = pTransactions
 	newBlock.PrevHash = oldBlock.Hash

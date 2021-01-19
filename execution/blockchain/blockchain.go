@@ -30,6 +30,9 @@ func main() {
 	}
 	mutex.Lock()
 	theBlockchain.Blocks = append(theBlockchain.Blocks, genesisBlock)
+	// TODO: Manage the creation of the main account in a better way. Not so many creations.
+	// For simplicity a "main" account will be created that contains the number of "coins" in the network
+	theBlockchain.State["main"] = 10
 	mutex.Unlock()
 
 	// Create the first node in the network to have as a starting point
@@ -50,10 +53,4 @@ func main() {
 
 	firstNode.GenerateBlock(genesisBlock, transactionList)
 
-}
-
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
 }

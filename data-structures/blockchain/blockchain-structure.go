@@ -66,7 +66,6 @@ func (pBlockchain *Blockchain) IsBlockValid(newBlock, oldBlock Block) (bool, err
 	default:
 		return true, nil
 	}
-
 }
 
 // Checks whether the hash is valid by checking if it starts with the given number of zeroes specified in the difficulty
