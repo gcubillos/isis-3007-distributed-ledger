@@ -14,7 +14,7 @@ import (
 
 // TODO: Way to define the difficulty in the caller program
 // The number of leading zeroes wanted from the hash when doing the proof of work
-var difficulty = 1
+var Difficulty = 1
 
 // What a block in the blockchain contains
 type Block struct {

@@ -78,14 +78,15 @@ func CreateNode(pGenesisBlock Block, pNode *noise.Node) NodeBlockchain {
 
 // Create the initial node
 // The genesis block is passed to the Node
-func CreateInitialNode(pGenesisBlock Block) NodeBlockchain {
+// The amount of available currency is passed as well to the node
+func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeBlockchain {
 	// Create structure
 	theNode = NodeBlockchain{
 		DataStructure: Blockchain{[]Block{pGenesisBlock}, make(map[string]float64, 0)},
 		Node:          nil,
 	}
-	// For simplicity a "main" account will be created that contains infinite values
-	theNode.DataStructure.State["main"] = 10
+	// For simplicity a "main" account will be created that contains the amount of currency available
+	theNode.DataStructure.State["main"] = pAvailableCurrency
 	// Create network node
 	networkNode, err := noise.NewNode()
 	check(err)
@@ -143,7 +144,7 @@ func (pNode *NodeBlockchain) GenerateBlock(oldBlock Block, pTransactions []ghost
 	newBlock.Timestamp = time.Now()
 	newBlock.Transactions = pTransactions
 	newBlock.PrevHash = oldBlock.Hash
-	newBlock.Difficulty = difficulty
+	newBlock.Difficulty = Difficulty
 	// Calculating the hash
 	for i := 0; ; i++ {
 		newBlock.Nonce = i
