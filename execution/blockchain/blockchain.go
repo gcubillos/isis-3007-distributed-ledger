@@ -10,9 +10,19 @@ import (
 var mutex = &sync.Mutex{}
 
 func main() {
+
+	// Defining parameters for simple execution
+
+	// Defining the difficulty for the tests (number of leading zeroes required in the hash)
+	var definedDifficulty = 1
+
+	// Defining the amount of currency that will be available during the tests.
+	// Of course, transactions with 0 value can be made as well. This is for the sake of simplicity, to have
+	// a fixed amount of currency
+	var availableCurrency = 10.0
 	t := time.Now()
 	genesisBlock := blockchain.Block{}
-	genesisBlock = blockchain.Block{Timestamp: t, Hash: blockchain.CalculateHash(genesisBlock), Transactions: make([]ghost.Transaction, 0), Difficulty: 1}
+	genesisBlock = blockchain.Block{Timestamp: t, Hash: blockchain.CalculateHash(genesisBlock), Transactions: make([]ghost.Transaction, 0), Difficulty: definedDifficulty}
 	// Validate created block
 	for i := 0; ; i++ {
 		genesisBlock.Nonce = i
@@ -26,7 +36,7 @@ func main() {
 	}
 
 	// Create the first node in the network to have as a starting point
-	firstNode := blockchain.CreateInitialNode(genesisBlock)
+	firstNode := blockchain.CreateInitialNode(genesisBlock, availableCurrency)
 
 	// Create other nodes
 	otherNode := blockchain.CreateNode(genesisBlock, firstNode.Node)
