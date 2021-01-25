@@ -108,4 +108,5 @@ func (pBlockchain *Blockchain) verifyStateTransition(pTransactions []ghost.Trans
 	initialState = modifiedState
 	return true
 	// TODO: Adding a limit for number of transactions in a block?
+	// TODO: Add a function to request to add a transaction to a block
 }
