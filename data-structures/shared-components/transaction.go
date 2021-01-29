@@ -1,4 +1,4 @@
-package ghost
+package components
 
 // What a transaction ensues
 // A transaction is a request to move $X from A to B

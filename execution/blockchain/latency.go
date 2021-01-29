@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain"
-	ghost "github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain-ghost"
+	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
 	"math/rand"
 	"sync"
 	"time"
@@ -34,7 +34,7 @@ func main() {
 	// Creating the genesis block
 	t := time.Now()
 	genesisBlock := blockchain.Block{}
-	genesisBlock = blockchain.Block{Timestamp: t, Hash: blockchain.CalculateHash(genesisBlock), Transactions: make([]ghost.Transaction, 0), Difficulty: definedDifficulty}
+	genesisBlock = blockchain.Block{Timestamp: t, Hash: blockchain.CalculateHash(genesisBlock), Transactions: make([]components.Transaction, 0), Difficulty: definedDifficulty}
 	// Validate created block
 	for i := 0; ; i++ {
 		genesisBlock.Nonce = i
@@ -76,13 +76,13 @@ func main() {
 			}
 		}
 
-		exampleTransaction := ghost.Transaction{
+		exampleTransaction := components.Transaction{
 			Origin:          nodesNetwork[randomSender].Node.Addr(),
 			SenderSignature: nodesNetwork[randomSender].Node.Addr(),
 			Destination:     nodesNetwork[randomReceiver].Node.Addr(),
 			Value:           rand.Float64(),
 		}
-		transactionList := make([]ghost.Transaction, 1, 1)
+		transactionList := make([]components.Transaction, 1, 1)
 		transactionList[0] = exampleTransaction
 
 		nodesNetwork[rand.Intn(len(nodesNetwork))].GenerateBlock(genesisBlock, transactionList)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	ghost "github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain-ghost"
+	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
 	"github.com/perlin-network/noise"
 	"github.com/perlin-network/noise/kademlia"
 	"sync"
@@ -127,12 +127,12 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeBloc
 
 // Create a block and broadcast it to the rest of the network
 
-func (pNode *NodeBlockchain) GenerateBlock(oldBlock Block, pTransactions []ghost.Transaction) Block {
+func (pNode *NodeBlockchain) GenerateBlock(oldBlock Block, pTransactions []components.Transaction) Block {
 
 	var newBlock Block
 
 	// Adding the transaction that gives the "miner" a reward for doing the work
-	rewardTransaction := ghost.Transaction{
+	rewardTransaction := components.Transaction{
 		Origin:          "main",
 		SenderSignature: "main",
 		Destination:     pNode.Node.Addr(),

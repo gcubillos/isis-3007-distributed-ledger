@@ -1,6 +1,7 @@
 package ghost
 
 import (
+	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
 	"github.com/perlin-network/noise"
 	"github.com/perlin-network/noise/kademlia"
 	"time"
@@ -37,14 +38,14 @@ func GenerateNode() NodeGhost {
 /* Creating a standard Block in the network
  */
 func (*NodeGhost) generateBlock(pNonce int, pParent *Block,
-	pTransactions []Transaction, pEndState map[string]*Account) Block {
+	pTransactions []components.Transaction, pEndState map[string]*Account) Block {
 	var rBlock Block
 	rBlock.Parent = pParent
 	rBlock.Timestamp = time.Now()
 	rBlock.Nonce = pNonce
 	rBlock.HashPreviousBlock = pParent.calculateHash()
 	rBlock.Transactions = pTransactions
-	rBlock.EndState = pEndState
+	rBlock.RecentState = pEndState
 	// Proof of work
 	// TODO: Including Simplified version of proof of work
 	return rBlock

@@ -1,11 +1,14 @@
 package ghost
 
-import "errors"
+import (
+	"errors"
+	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
+)
 
 // *** Structs ***
+
 /* Declaration of structure
-Contains Blocks and State
-*/
+Contains Blocks and State, it also saves the children and unused nodes */
 type Ghost struct {
 	Blocks []Block
 	State  map[string]*Account
@@ -16,7 +19,7 @@ type Ghost struct {
 
 // State transition function. Checks validity of a change in State from a list of Transactions
 // Syntax APPLY(S,TX) -> S'
-func stateTransition(pCurrentState map[string]*Account, pTransaction Transaction) (pModifiedState map[string]*Account, err error) {
+func stateTransition(pCurrentState map[string]*Account, pTransaction components.Transaction) (pModifiedState map[string]*Account, err error) {
 	// If referenced UTXO is not in S
 	pModifiedState = pCurrentState
 	if pCurrentState[pTransaction.Origin].Balance <= pTransaction.Value {

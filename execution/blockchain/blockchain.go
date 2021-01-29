@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain"
-	ghost "github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain-ghost"
+	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
 	"sync"
 	"time"
 )
@@ -22,7 +22,7 @@ func main() {
 	var availableCurrency = 10.0
 	t := time.Now()
 	genesisBlock := blockchain.Block{}
-	genesisBlock = blockchain.Block{Timestamp: t, Hash: blockchain.CalculateHash(genesisBlock), Transactions: make([]ghost.Transaction, 0), Difficulty: definedDifficulty}
+	genesisBlock = blockchain.Block{Timestamp: t, Hash: blockchain.CalculateHash(genesisBlock), Transactions: make([]components.Transaction, 0), Difficulty: definedDifficulty}
 	// Validate created block
 	for i := 0; ; i++ {
 		genesisBlock.Nonce = i
@@ -42,13 +42,13 @@ func main() {
 	otherNode := blockchain.CreateNode(genesisBlock, firstNode.Node)
 
 	// Create an empty transaction
-	exampleTransaction := ghost.Transaction{
+	exampleTransaction := components.Transaction{
 		Origin:          firstNode.Node.Addr(),
 		SenderSignature: firstNode.Node.Addr(),
 		Destination:     otherNode.Node.Addr(),
 		Value:           0,
 	}
-	transactionList := make([]ghost.Transaction, 1, 1)
+	transactionList := make([]components.Transaction, 1, 1)
 	transactionList[0] = exampleTransaction
 
 	firstNode.GenerateBlock(genesisBlock, transactionList)
