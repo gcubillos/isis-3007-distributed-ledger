@@ -59,8 +59,7 @@ func (pGhost *Ghost) IsBlockValid(pBlock Block) (bool, error) {
 	case !IsHashValid(pBlock.Hash, pBlock.Difficulty):
 		return false, errors.New("Proof of work is not valid")
 	// State transition check
-	// TODO: Add the state if necessary, maybe it can be accessed through the block itself
-	case !pGhost.verifyStateTransition(pBlock.Transactions, nil):
+	case !pGhost.verifyStateTransition(pBlock):
 		return false, errors.New("the transactions are inconsistent with the state")
 	default:
 		return true, nil
@@ -90,51 +89,33 @@ func IsHashValid(hash string, difficulty int) bool {
 }
 
 // Receives a state and then performs the transactions and returns the modified state when it is valid
-func (pGhost *Ghost) verifyStateTransition(pTransactions []components.Transaction, initialState map[string]float64) bool {
-case:
-
-	var initialState = pBlock.Parent.RecentState
-	for i := 0; i < len(pBlock.Transactions); i++ {
-	if currentState, err := stateTransition(initialState, pBlock.Transactions[i]); err != nil {
-	initialState = currentState
-	} else {
-	break
-	}
-	}
-	// Checking state
-	if len(pBlock.RecentState) == len(initialState) {
-	for i := range pBlock.RecentState {
-	if !(pBlock.RecentState[i].Nonce == initialState[i].Nonce) &&
-	(pBlock.RecentState[i].Balance == initialState[i].Balance) &&
-	(pBlock.RecentState[i].Address == initialState[i].Address) {
-	return false, errors.New("there is an error with the state")
-	}
-	}
-	} else {
-	return false, errors.New("state doesn't match")
-	}
-	modifiedState := initialState
-	for _, v := range pTransactions {
-		// TODO: Verifying signature, doing it in the same main function?
-		// TODO: Change it so that it verifies the signature
-		// Signature of sender does not match the owner of the UTXO
-		// UTXO is not in the state
-		if pGhost.State[v.Origin] < v.Value {
+func (pGhost *Ghost) verifyStateTransition(pBlock Block) bool {
+	// TODO: Checking validity of accounts
+	// Initialize state
+	var modifiedState = pBlock.Parent.RecentState
+	// Go through the lists of transactions
+	for _, v := range pBlock.Transactions {
+		switch true {
+		// Checking transaction is valid and well formed
+		case v.Value < 0:
 			return false
+		// Referenced UTXO is not in the state
+		case modifiedState[v.Origin].Balance < v.Value:
+			return false
+			// Signature of sender does not match owner
+		}
+		// Update state
+		modifiedState[v.Origin].Balance -= v.Value
+		// Check that the recipient of the UTXO exists, if not, create it
+		if _, ok := modifiedState[v.Destination]; ok {
+			modifiedState[v.Destination].Balance += v.Value
 		} else {
-			// Update state
-			modifiedState[v.Origin] -= v.Value
-			// Checking that the recipient of the UTXO exists. If not, create it
-			if _, ok := modifiedState[v.Destination]; ok {
-				modifiedState[v.Destination] += v.Value
-			} else {
-				modifiedState[v.Destination] = v.Value
-			}
+			theAccount := CreateAccount(v.Destination)
+			modifiedState[v.Destination] = &theAccount
+			modifiedState[v.Destination].Balance = v.Value
 		}
 	}
-	// Update the final state
-	initialState = modifiedState
+	// Update the state
+	pBlock.RecentState = modifiedState
 	return true
-	// TODO: Adding a limit for number of transactions in a block?
-	// TODO: Add a function to request to add a transaction to a block
 }

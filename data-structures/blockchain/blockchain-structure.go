@@ -76,7 +76,8 @@ func IsHashValid(hash string, difficulty int) bool {
 	return strings.HasPrefix(hash, prefix)
 }
 
-// TODO: Change consensus algorithm?
+// TODO: Change consensus algorithm? When it is being changed verify that the new chain is valid
+// that is that the transitions in the state are valid
 func (pBlockchain *Blockchain) ReplaceChain(newBlockchain Blockchain) {
 	if len(newBlockchain.Blocks) > len(pBlockchain.Blocks) {
 		pBlockchain.Blocks = newBlockchain.Blocks
@@ -88,21 +89,24 @@ func (pBlockchain *Blockchain) ReplaceChain(newBlockchain Blockchain) {
 func (pBlockchain *Blockchain) verifyStateTransition(pTransactions []components.Transaction, initialState map[string]float64) bool {
 	modifiedState := initialState
 	for _, v := range pTransactions {
+		switch true {
 		// TODO: Verifying signature, doing it in the same main function?
 		// TODO: Change it so that it verifies the signature
 		// Signature of sender does not match the owner of the UTXO
-		// UTXO is not in the state
-		if pBlockchain.State[v.Origin] < v.Value {
+		// Transaction is well formed
+		case pBlockchain.State[v.Origin] < 0:
 			return false
+		// UTXO is not in the state
+		case pBlockchain.State[v.Origin] < v.Value:
+			return false
+		}
+		// Update state
+		modifiedState[v.Origin] -= v.Value
+		// Checking that the recipient of the UTXO exists. If not, create it
+		if _, ok := modifiedState[v.Destination]; ok {
+			modifiedState[v.Destination] += v.Value
 		} else {
-			// Update state
-			modifiedState[v.Origin] -= v.Value
-			// Checking that the recipient of the UTXO exists. If not, create it
-			if _, ok := modifiedState[v.Destination]; ok {
-				modifiedState[v.Destination] += v.Value
-			} else {
-				modifiedState[v.Destination] = v.Value
-			}
+			modifiedState[v.Destination] = v.Value
 		}
 	}
 	// Update the final state
