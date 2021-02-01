@@ -58,7 +58,7 @@ func main() {
 
 	// Create other nodes
 	for i := 0; i < numberNodes; i++ {
-		nodesNetwork = append(nodesNetwork, blockchain.CreateNode(genesisBlock, firstNode.Node))
+		nodesNetwork = append(nodesNetwork, blockchain.CreateNode(firstNode.DataStructure, firstNode.Node))
 	}
 
 	// Creating seed for randomizing sender and receiver of transactions

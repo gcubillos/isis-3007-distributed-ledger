@@ -39,7 +39,7 @@ func main() {
 	firstNode := blockchain.CreateInitialNode(genesisBlock, availableCurrency)
 
 	// Create other nodes
-	otherNode := blockchain.CreateNode(genesisBlock, firstNode.Node)
+	otherNode := blockchain.CreateNode(firstNode.DataStructure, firstNode.Node)
 
 	// Create an empty transaction
 	exampleTransaction := components.Transaction{

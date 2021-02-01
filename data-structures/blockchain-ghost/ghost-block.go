@@ -25,6 +25,7 @@ type Block struct {
 	Transactions      []components.Transaction
 	RecentState       map[string]*Account
 	BlockNumber       int
+	Subtree           int
 	Difficulty        int
 }
 
@@ -59,17 +60,11 @@ func (pGhost *Ghost) IsBlockValid(pBlock Block) (bool, error) {
 	case !IsHashValid(pBlock.Hash, pBlock.Difficulty):
 		return false, errors.New("Proof of work is not valid")
 	// State transition check
-	case !pGhost.verifyStateTransition(pBlock):
+	case !verifyStateTransition(pBlock):
 		return false, errors.New("the transactions are inconsistent with the state")
 	default:
 		return true, nil
 	}
-}
-
-//Checks validity of uncles
-//TODO: Finish validity of uncles
-func (pBlock *Block) checkUncleValidity() (isValid bool) {
-	return false
 }
 
 // Generate Hash of a Block. Using Block header which includes Timestamp, Nonce,
@@ -89,7 +84,7 @@ func IsHashValid(hash string, difficulty int) bool {
 }
 
 // Receives a state and then performs the transactions and returns the modified state when it is valid
-func (pGhost *Ghost) verifyStateTransition(pBlock Block) bool {
+func verifyStateTransition(pBlock Block) bool {
 	// TODO: Checking validity of accounts
 	// Initialize state
 	var modifiedState = pBlock.Parent.RecentState
@@ -99,10 +94,11 @@ func (pGhost *Ghost) verifyStateTransition(pBlock Block) bool {
 		// Checking transaction is valid and well formed
 		case v.Value < 0:
 			return false
+		// Signature of sender does not match owner
+		// TODO: Calculating signature
 		// Referenced UTXO is not in the state
 		case modifiedState[v.Origin].Balance < v.Value:
 			return false
-			// Signature of sender does not match owner
 		}
 		// Update state
 		modifiedState[v.Origin].Balance -= v.Value

@@ -116,4 +116,4 @@ func (pBlockchain *Blockchain) verifyStateTransition(pTransactions []components.
 	// TODO: Add a function to request to add a transaction to a block
 }
 
-// TODO: Standarize names through out the implementations
+// TODO: Standardize names through out the implementations

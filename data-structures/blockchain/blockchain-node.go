@@ -14,25 +14,24 @@ import (
 // Mutual exclusion variable
 var mutex = &sync.Mutex{}
 
-// An instance of the node blockchain
-var theNode NodeBlockchain
-
 // What the node contains, the data structure and a reference to a peer in the p2p network
 type NodeBlockchain struct {
 	DataStructure Blockchain
 	Node          *noise.Node
 }
 
-// Create a node in the network such that it can discover other nodes using the Kademlia protocol
-// The genesis block is passed to the Node and a first peer to connect to the network
-func CreateNode(pGenesisBlock Block, pNode *noise.Node) NodeBlockchain {
+// An instance of the blockchain node
+var theNode NodeBlockchain
+
+// Create a node in the network such that it can discover other nodes using the Kademlia
+// protocol. The current state of the blockchain is passed to the Node and a first peer
+// to connect to the network
+func CreateNode(pCurrentBlockchain Blockchain, pNode *noise.Node) NodeBlockchain {
 	// Create structure
 	theNode = NodeBlockchain{
-		DataStructure: Blockchain{[]Block{pGenesisBlock}, make(map[string]float64, 0)},
+		DataStructure: pCurrentBlockchain,
 		Node:          nil,
 	}
-	// For simplicity a "main" account will be created that contains infinite values
-	theNode.DataStructure.State["main"] = 10
 	// Create network node
 	networkNode, err := noise.NewNode()
 	check(err)

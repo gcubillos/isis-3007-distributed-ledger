@@ -19,7 +19,7 @@ func main() {
 	for i := range users {
 		ghost.CreateAccount("123" + strconv.Itoa(i))
 	}
-	fmt.Printf("", users)
+	fmt.Printf("%v", users)
 	// Creating new nodes
 	alice := ghost.GenerateNode()
 
@@ -35,7 +35,11 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("", len(alice.No))
+	// TODO: Handle incoming data streams, to check whether
+	// When another node connects to our host and wants to propose a new Blockchain to overwrite our own, we need logic to
+	// determine whether or not we should accept it.
+
+	// TODO: Adding new Blocks to the Blockchain and broadcast them
 
 	//// Creating a network node
 	//nodeA := ghost.GenerateNode()
