@@ -25,7 +25,6 @@ type Block struct {
 	Transactions      []components.Transaction
 	RecentState       map[string]*Account
 	BlockNumber       int
-	Subtree           int
 	Difficulty        int
 }
 

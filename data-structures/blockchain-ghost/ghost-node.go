@@ -56,7 +56,7 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err != nil {
 			fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedGhost.Blocks)
 		} else {
-			thisNode.DataStructure.ReplaceGHOST(receivedGhost)
+			thisNode.DataStructure.FindGHOST(receivedGhost)
 		}
 		fmt.Printf("current structure CreateNode %v \n", thisNode.DataStructure)
 
@@ -84,7 +84,7 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhost {
 	// Create structure
 	thisNode = NodeGhost{
-		DataStructure: Ghost{[]Block{pGenesisBlock}, make(map[string]*Account, 0)},
+		DataStructure: Ghost{[]Block{pGenesisBlock}, make(map[string]*Account, 0), pGenesisBlock},
 		Node:          nil,
 	}
 	// Create network node
@@ -93,6 +93,7 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhos
 
 	// For simplicity a "main" account will be created that contains the amount of currency available
 	mainAccount := CreateAccount(networkNode.Addr())
+	mainAccount.Balance = pAvailableCurrency
 	thisNode.DataStructure.State[networkNode.Addr()] = &mainAccount
 
 	// Assign the Kademlia protocol to the node so it can discover other nodes
@@ -113,7 +114,7 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhos
 		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err != nil {
 			fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err.Error(), receivedGhost)
 		} else {
-			thisNode.DataStructure.ReplaceGHOST(receivedGhost)
+			thisNode.DataStructure.FindGHOST(receivedGhost)
 		}
 		fmt.Printf("current structure InitialNode %v \n", thisNode.DataStructure)
 
@@ -152,6 +153,7 @@ func (pNode *NodeGhost) generateBlock(pParent *Block, pTransactions []components
 	nBlock.HashPreviousBlock = pParent.Hash
 	nBlock.Difficulty = pParent.Difficulty
 	nBlock.Transactions = pTransactions
+	nBlock.BlockNumber = len(pNode.DataStructure.Blocks) + 1
 
 	// Proof of work, calculating the hash
 	for i := 0; ; i++ {
@@ -179,6 +181,8 @@ func (pNode *NodeGhost) generateBlock(pParent *Block, pTransactions []components
 			_, err = thisNode.Node.Request(context.TODO(), v.ID().Address, bytes)
 			check(err)
 		}
+	} else {
+
 	}
 
 	return nBlock
@@ -189,8 +193,4 @@ func check(err error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-// Discover other nodes in the network
-func (a *NodeGhost) discover() {
 }

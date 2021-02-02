@@ -5,8 +5,9 @@ package ghost
 /* Declaration of structure
 Contains Blocks and State, it also saves the children and unused nodes */
 type Ghost struct {
-	Blocks []Block
-	State  map[string]*Account
+	Blocks      []Block
+	State       map[string]*Account
+	CurrentLeaf Block
 }
 
 // *** Constructors ***
@@ -19,17 +20,22 @@ type Ghost struct {
 
 // Finding the GHOST (Greedy Heaviest-Observed Sub-Tree)
 // TODO: Finish finding GHOST
-func (pGhost *Ghost) ReplaceGHOST(pNewBlockchain Ghost) (pHeaviestChild Block, pNumber int) {
+func (pGhost *Ghost) FindGHOST(pNewBlockchain Ghost) {
+	// Find the forking and divergence in history
+
+	// Start in genesis block
+	currentBlock := pGhost.Blocks[0]
 	// Find children of block
 	newBlockChildren := make([]Block, 0)
 	for _, v := range pNewBlockchain.Blocks {
-		if v.Parent.Hash == pNewBlock.Hash {
+		if v.Parent.Hash == currentBlock.Hash {
 			newBlockChildren = append(newBlockChildren, v)
 		}
 	}
 	// Check result
 	if len(newBlockChildren) == 0 {
-		return pNewBlock, 1
+		// Update the leaf
+		pGhost.CurrentLeaf
 	} else {
 		biggestSubtree := 0
 		for _, v := range newBlockChildren {

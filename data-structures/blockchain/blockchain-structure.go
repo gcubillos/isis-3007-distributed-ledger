@@ -78,6 +78,7 @@ func IsHashValid(hash string, difficulty int) bool {
 
 // TODO: Change consensus algorithm? When it is being changed verify that the new chain is valid
 // that is that the transitions in the state are valid
+// TODO: Verify the forks so that it behaves similarly than the ghost protocol
 func (pBlockchain *Blockchain) ReplaceChain(newBlockchain Blockchain) {
 	if len(newBlockchain.Blocks) > len(pBlockchain.Blocks) {
 		pBlockchain.Blocks = newBlockchain.Blocks
