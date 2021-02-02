@@ -22,7 +22,7 @@ type NodeGhost struct {
 }
 
 // An instance of the ghost node
-var theNode NodeGhost
+var thisNode NodeGhost
 
 // *** Constructors ***
 
@@ -31,7 +31,7 @@ var theNode NodeGhost
 // to connect to the network
 func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 	// Create structure
-	theNode = NodeGhost{
+	thisNode = NodeGhost{
 		DataStructure: pCurrentGhost,
 		Node:          nil,
 	}
@@ -43,22 +43,22 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 	ka := kademlia.New()
 	networkNode.Bind(ka.Protocol())
 
-	// Assign the way the node will handle the requests for blockchain updates
+	// Assign the way the node will handle the requests for updates in the chain
 	networkNode.Handle(func(ctx noise.HandlerContext) error {
 		if !ctx.IsRequest() {
 			return nil
 		}
 
-		receivedBlockchain := Ghost{
+		receivedGhost := Ghost{
 			Blocks: make([]Block, 0),
 			State:  make(map[string]*Account, 0),
 		}
-		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err != nil {
-			fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain.Blocks)
+		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err != nil {
+			fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedGhost.Blocks)
 		} else {
-			theNode.DataStructure.ReplaceGHOST(receivedBlockchain)
+			thisNode.DataStructure.ReplaceGHOST(receivedGhost)
 		}
-		fmt.Printf("current structure CreateNode %v \n", theNode.DataStructure)
+		fmt.Printf("current structure CreateNode %v \n", thisNode.DataStructure)
 
 		return nil
 	})
@@ -73,27 +73,115 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 	// Discover the other nodes present in the network at the moment
 	ka.Discover()
 	// Assign the network node to the node
-	theNode.Node = networkNode
+	thisNode.Node = networkNode
 
-	return theNode
+	return thisNode
+}
+
+// Create the initial node
+// The genesis block is passed to the Node
+// The amount of available currency is passed to the node
+func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhost {
+	// Create structure
+	thisNode = NodeGhost{
+		DataStructure: Ghost{[]Block{pGenesisBlock}, make(map[string]*Account, 0)},
+		Node:          nil,
+	}
+	// Create network node
+	networkNode, err := noise.NewNode()
+	check(err)
+
+	// For simplicity a "main" account will be created that contains the amount of currency available
+	mainAccount := CreateAccount(networkNode.Addr())
+	thisNode.DataStructure.State[networkNode.Addr()] = &mainAccount
+
+	// Assign the Kademlia protocol to the node so it can discover other nodes
+	ka := kademlia.New()
+	networkNode.Bind(ka.Protocol())
+
+	// Assign the way the node will handle the requests for updates in the chain
+	networkNode.Handle(func(ctx noise.HandlerContext) error {
+		if !ctx.IsRequest() {
+			return nil
+		}
+
+		receivedGhost := Ghost{
+			Blocks: make([]Block, 0),
+			State:  make(map[string]*Account, 0),
+		}
+		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method
+		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err != nil {
+			fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err.Error(), receivedGhost)
+		} else {
+			thisNode.DataStructure.ReplaceGHOST(receivedGhost)
+		}
+		fmt.Printf("current structure InitialNode %v \n", thisNode.DataStructure)
+
+		return nil
+	})
+
+	// Make the node listen to the network
+	check(networkNode.Listen())
+
+	// Assign the network node to the node
+	thisNode.Node = networkNode
+
+	return thisNode
 }
 
 // *** Methods ***
 
-/* Creating a standard Block in the network
- */
-func (*NodeGhost) generateBlock(pNonce int, pParent *Block,
-	pTransactions []components.Transaction, pEndState map[string]*Account) Block {
-	var rBlock Block
-	rBlock.Parent = pParent
-	rBlock.Timestamp = time.Now()
-	rBlock.Nonce = pNonce
-	rBlock.HashPreviousBlock = pParent.calculateHash()
-	rBlock.Transactions = pTransactions
-	rBlock.RecentState = pEndState
-	// Proof of work
-	// TODO: Including Simplified version of proof of work
-	return rBlock
+// Creating a standard Block in the network and broadcasting it
+func (pNode *NodeGhost) generateBlock(pParent *Block, pTransactions []components.Transaction) Block {
+
+	var nBlock Block
+
+	// Adding the transaction that gives the "miner" a reward for doing the work
+	// TODO: Revise the rewards whether it is belonging to the main chain or not
+	rewardTransaction := components.Transaction{
+		Origin:          "main",
+		SenderSignature: "main",
+		Destination:     pNode.Node.Addr(),
+		Value:           1,
+	}
+	pTransactions = append(pTransactions, rewardTransaction)
+
+	// Basic information in the block
+	nBlock.Parent = pParent
+	nBlock.Timestamp = time.Now()
+	nBlock.HashPreviousBlock = pParent.Hash
+	nBlock.Difficulty = pParent.Difficulty
+	nBlock.Transactions = pTransactions
+
+	// Proof of work, calculating the hash
+	for i := 0; ; i++ {
+		nBlock.Nonce = i
+		if !IsHashValid(calculateHash(nBlock), nBlock.Difficulty) {
+			continue
+		} else {
+			nBlock.Hash = calculateHash(nBlock)
+			break
+		}
+	}
+
+	// Check that the block is valid
+	if ok, err := thisNode.DataStructure.IsBlockValid(nBlock); ok {
+		check(err)
+		// Add the block to the current structure
+		mutex.Lock()
+		thisNode.DataStructure.Blocks = append(thisNode.DataStructure.Blocks, nBlock)
+		mutex.Unlock()
+		// Convert the chain so that it can be broadcast
+		bytes, err := json.Marshal(thisNode.DataStructure)
+		check(err)
+		// Broadcast the chain to the network
+		for _, v := range thisNode.Node.Outbound() {
+			_, err = thisNode.Node.Request(context.TODO(), v.ID().Address, bytes)
+			check(err)
+		}
+	}
+
+	return nBlock
 }
 
 // Revises whether the error is not nil

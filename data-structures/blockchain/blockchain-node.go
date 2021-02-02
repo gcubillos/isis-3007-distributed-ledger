@@ -21,14 +21,14 @@ type NodeBlockchain struct {
 }
 
 // An instance of the blockchain node
-var theNode NodeBlockchain
+var thisNode NodeBlockchain
 
 // Create a node in the network such that it can discover other nodes using the Kademlia
 // protocol. The current state of the blockchain is passed to the Node and a first peer
 // to connect to the network
 func CreateNode(pCurrentBlockchain Blockchain, pNode *noise.Node) NodeBlockchain {
 	// Create structure
-	theNode = NodeBlockchain{
+	thisNode = NodeBlockchain{
 		DataStructure: pCurrentBlockchain,
 		Node:          nil,
 	}
@@ -53,9 +53,9 @@ func CreateNode(pCurrentBlockchain Blockchain, pNode *noise.Node) NodeBlockchain
 		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err != nil {
 			fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain.Blocks)
 		} else {
-			theNode.DataStructure.ReplaceChain(receivedBlockchain)
+			thisNode.DataStructure.ReplaceChain(receivedBlockchain)
 		}
-		fmt.Printf("current structure CreateNode %v \n", theNode.DataStructure)
+		fmt.Printf("current structure CreateNode %v \n", thisNode.DataStructure)
 
 		return nil
 	})
@@ -70,9 +70,9 @@ func CreateNode(pCurrentBlockchain Blockchain, pNode *noise.Node) NodeBlockchain
 	// Discover the other nodes present in the network at the moment
 	ka.Discover()
 	// Assign the network node to the node
-	theNode.Node = networkNode
+	thisNode.Node = networkNode
 
-	return theNode
+	return thisNode
 }
 
 // Create the initial node
@@ -80,12 +80,12 @@ func CreateNode(pCurrentBlockchain Blockchain, pNode *noise.Node) NodeBlockchain
 // The amount of available currency is passed as well to the node
 func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeBlockchain {
 	// Create structure
-	theNode = NodeBlockchain{
+	thisNode = NodeBlockchain{
 		DataStructure: Blockchain{[]Block{pGenesisBlock}, make(map[string]float64, 0)},
 		Node:          nil,
 	}
 	// For simplicity a "main" account will be created that contains the amount of currency available
-	theNode.DataStructure.State["main"] = pAvailableCurrency
+	thisNode.DataStructure.State["main"] = pAvailableCurrency
 	// Create network node
 	networkNode, err := noise.NewNode()
 	check(err)
@@ -108,9 +108,9 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeBloc
 		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err != nil {
 			fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain)
 		} else {
-			theNode.DataStructure.ReplaceChain(receivedBlockchain)
+			thisNode.DataStructure.ReplaceChain(receivedBlockchain)
 		}
-		fmt.Printf("current structure InitialNode %v \n", theNode.DataStructure)
+		fmt.Printf("current structure InitialNode %v \n", thisNode.DataStructure)
 
 		return nil
 	})
@@ -119,9 +119,9 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeBloc
 	check(networkNode.Listen())
 
 	// Assign the network node to the node
-	theNode.Node = networkNode
+	thisNode.Node = networkNode
 
-	return theNode
+	return thisNode
 }
 
 // Create a block and broadcast it to the rest of the network
@@ -156,18 +156,18 @@ func (pNode *NodeBlockchain) GenerateBlock(oldBlock Block, pTransactions []compo
 	}
 
 	// Check that the block is valid
-	if ok, err := theNode.DataStructure.IsBlockValid(newBlock, oldBlock); ok {
+	if ok, err := thisNode.DataStructure.IsBlockValid(newBlock, oldBlock); ok {
 		check(err)
 		// Add the block to the current blockchain
 		mutex.Lock()
-		theNode.DataStructure.Blocks = append(theNode.DataStructure.Blocks, newBlock)
+		thisNode.DataStructure.Blocks = append(thisNode.DataStructure.Blocks, newBlock)
 		mutex.Unlock()
 		// Convert the blockchain so that it can be sent
-		bytes, err := json.Marshal(theNode.DataStructure)
+		bytes, err := json.Marshal(thisNode.DataStructure)
 		check(err)
 		// Broadcast the blockchain to the network
-		for _, v := range theNode.Node.Outbound() {
-			_, err = theNode.Node.Request(context.TODO(), v.ID().Address, bytes)
+		for _, v := range thisNode.Node.Outbound() {
+			_, err = thisNode.Node.Request(context.TODO(), v.ID().Address, bytes)
 			check(err)
 		}
 	}
