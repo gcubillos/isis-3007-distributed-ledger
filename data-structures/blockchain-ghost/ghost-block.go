@@ -50,10 +50,10 @@ func (pGhost *Ghost) IsBlockValid(pBlock Block) (bool, error) {
 	case pBlock.Timestamp.Before(pBlock.Parent.Timestamp):
 		return false, errors.New("timestamp of previous Block isn't valid")
 	// Previous block hash comparison
-	case pBlock.HashPreviousBlock != calculateHash(pBlock):
+	case pBlock.HashPreviousBlock != CalculateHash(pBlock):
 		return false, errors.New("hash of previous block doesn't match")
 	// Checking that the current hash is valid
-	case pBlock.Hash != calculateHash(pBlock):
+	case pBlock.Hash != CalculateHash(pBlock):
 		return false, errors.New("current block hash is not valid")
 	// Validating proof of work
 	case !IsHashValid(pBlock.Hash, pBlock.Difficulty):
@@ -68,7 +68,7 @@ func (pGhost *Ghost) IsBlockValid(pBlock Block) (bool, error) {
 
 // Generate Hash of a Block. Using Block header which includes Timestamp, Nonce,
 // previous Block Hash
-func calculateHash(pBlock Block) string {
+func CalculateHash(pBlock Block) string {
 	bHeader := strconv.Itoa(pBlock.Nonce) + pBlock.Timestamp.String() + pBlock.HashPreviousBlock
 	Hash := sha256.New()
 	Hash.Write([]byte(bHeader))

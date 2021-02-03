@@ -158,10 +158,10 @@ func (pNode *NodeGhost) generateBlock(pParent *Block, pTransactions []components
 	// Proof of work, calculating the hash
 	for i := 0; ; i++ {
 		nBlock.Nonce = i
-		if !IsHashValid(calculateHash(nBlock), nBlock.Difficulty) {
+		if !IsHashValid(CalculateHash(nBlock), nBlock.Difficulty) {
 			continue
 		} else {
-			nBlock.Hash = calculateHash(nBlock)
+			nBlock.Hash = CalculateHash(nBlock)
 			break
 		}
 	}
