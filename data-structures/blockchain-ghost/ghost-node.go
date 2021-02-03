@@ -84,7 +84,7 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhost {
 	// Create structure
 	thisNode = NodeGhost{
-		DataStructure: Ghost{[]Block{pGenesisBlock}, make(map[string]*Account, 0), pGenesisBlock},
+		DataStructure: Ghost{[]Block{pGenesisBlock}, make(map[string]*Account, 0), []Block{pGenesisBlock}},
 		Node:          nil,
 	}
 	// Create network node
@@ -172,6 +172,7 @@ func (pNode *NodeGhost) generateBlock(pParent *Block, pTransactions []components
 		// Add the block to the current structure
 		mutex.Lock()
 		thisNode.DataStructure.Blocks = append(thisNode.DataStructure.Blocks, nBlock)
+		thisNode.DataStructure.CurrentChain = append(thisNode.DataStructure.CurrentChain, nBlock)
 		mutex.Unlock()
 		// Convert the chain so that it can be broadcast
 		bytes, err := json.Marshal(thisNode.DataStructure)

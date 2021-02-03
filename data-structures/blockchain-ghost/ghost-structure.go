@@ -5,9 +5,9 @@ package ghost
 /* Declaration of structure
 Contains Blocks and State, it also saves the children and unused nodes */
 type Ghost struct {
-	Blocks      []Block
-	State       map[string]*Account
-	CurrentLeaf Block
+	Blocks       []Block
+	State        map[string]*Account
+	CurrentChain []Block
 }
 
 // *** Constructors ***
@@ -19,32 +19,55 @@ type Ghost struct {
 // TODO: Finish replace chain algorithm
 
 // Finding the GHOST (Greedy Heaviest-Observed Sub-Tree)
+// Modified version where you start at the tip and work your way backwards to find the
+// heaviest sub tree
 // TODO: Finish finding GHOST
 func (pGhost *Ghost) FindGHOST(pNewBlockchain Ghost) {
-	// Find the forking and divergence in history
-
-	// Start in genesis block
-	currentBlock := pGhost.Blocks[0]
-	// Find children of block
-	newBlockChildren := make([]Block, 0)
-	for _, v := range pNewBlockchain.Blocks {
-		if v.Parent.Hash == currentBlock.Hash {
-			newBlockChildren = append(newBlockChildren, v)
+	var forkBlock Block
+	var diverges = false
+	// Find the place the fork occurs and history diverges
+	for i := 0; !diverges; i++ {
+		if pGhost.CurrentChain[i].Hash != pNewBlockchain.CurrentChain[i].Hash {
+			forkBlock = *pGhost.CurrentChain[i].Parent
+			diverges = true
 		}
 	}
-	// Check result
-	if len(newBlockChildren) == 0 {
-		// Update the leaf
-		pGhost.CurrentLeaf
-	} else {
-		biggestSubtree := 0
-		for _, v := range newBlockChildren {
-			if biggestSubtree < v.Children {
 
-			}
+	// Subtree size of the new chain
+	newChainSize := findSubTreeSize(pNewBlockchain, forkBlock)
+	currentChainSize := findSubTreeSize(*pGhost, forkBlock)
 
+	if newChainSize > currentChainSize {
+		pGhost.Blocks = pNewBlockchain.Blocks
+		pGhost.CurrentChain = pNewBlockchain.CurrentChain
+		pGhost.State = pNewBlockchain.State
+	}
+}
+
+func findChildren(pBlock Block, pBlockchain Ghost) int {
+	numberOfChildren := 0
+	for _, v := range pBlockchain.Blocks {
+		if v.Parent.Hash == pBlock.Hash {
+			numberOfChildren++
 		}
 	}
+	return numberOfChildren
+}
+
+func findSubTreeSize(pNewBlockchain Ghost, pForkBlock Block) int {
+	pCurrentBlock := pNewBlockchain.CurrentChain[len(pNewBlockchain.CurrentChain)-1]
+	newSubtreeSize := 0
+	var reachedFork = false
+	for j := 0; !reachedFork; j++ {
+		if pCurrentBlock.Parent.Hash == pForkBlock.Hash {
+			reachedFork = true
+		} else {
+			newSubtreeSize += 1
+			newSubtreeSize += findChildren(pCurrentBlock, pNewBlockchain) - 1
+			pCurrentBlock = *pCurrentBlock.Parent
+		}
+	}
+	return newSubtreeSize
 
 }
 

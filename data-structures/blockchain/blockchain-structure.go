@@ -82,6 +82,7 @@ func IsHashValid(hash string, difficulty int) bool {
 func (pBlockchain *Blockchain) ReplaceChain(newBlockchain Blockchain) {
 	if len(newBlockchain.Blocks) > len(pBlockchain.Blocks) {
 		pBlockchain.Blocks = newBlockchain.Blocks
+		pBlockchain.State = newBlockchain.State
 	}
 }
 
