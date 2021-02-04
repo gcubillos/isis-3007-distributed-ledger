@@ -124,6 +124,8 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhos
 	// Make the node listen to the network
 	check(networkNode.Listen())
 
+	// TODO: Modify the time the address is being put to the state so that the nodes can communicate
+
 	// Assign the network node to the node
 	thisNode.Node = networkNode
 
@@ -133,7 +135,7 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhos
 // *** Methods ***
 
 // Creating a standard Block in the network and broadcasting it
-func (pNode *NodeGhost) generateBlock(pParent *Block, pTransactions []components.Transaction) Block {
+func (pNode *NodeGhost) GenerateBlock(pParent *Block, pTransactions []components.Transaction) Block {
 
 	var nBlock Block
 

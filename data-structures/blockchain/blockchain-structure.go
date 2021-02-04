@@ -44,27 +44,44 @@ func CalculateHash(block Block) string {
 
 // Function that checks whether a block is valid
 func (pBlockchain *Blockchain) IsBlockValid(newBlock, oldBlock Block) (bool, error) {
-	// TODO: Validating previous block
-	switch true {
-	// Previous block exists in the blockchain. It is assumed it is valid
-	case oldBlock.Hash != pBlockchain.Blocks[len(pBlockchain.Blocks)-1].Hash:
-		return false, errors.New("oldBlock's hash doesn't seem to match the latest block in the blockchain")
-	// Timestamp
-	case !oldBlock.Timestamp.Before(newBlock.Timestamp):
-		return false, errors.New("timestamp is not valid")
-	// Previous block hash comparison
-	case oldBlock.Hash != newBlock.PrevHash:
-		return false, errors.New("hash of previous block doesn't match")
-	// Does the corresponding hash match
-	case CalculateHash(newBlock) != newBlock.Hash:
-		return false, errors.New("calculated hash doesn't match")
-	// Checking proof of work
-	case !IsHashValid(newBlock.Hash, newBlock.Difficulty):
-		return false, errors.New("the proof of work is not valid")
-	// Verifying state transition
-	case !pBlockchain.verifyStateTransition(newBlock.Transactions, pBlockchain.State):
-		return false, errors.New("the transactions are inconsistent with the state")
-	default:
+	// Validating previous blocks until the genesis block is reached
+	if oldBlock.PrevHash != "" {
+		// Finding parent of block
+		var parentOfBlock Block
+		for _, v := range pBlockchain.Blocks {
+			if v.PrevHash == oldBlock.Hash {
+				parentOfBlock = v
+				break
+			}
+		}
+		// Previous block exists and is valid
+		if condition, _ := pBlockchain.IsBlockValid(oldBlock, parentOfBlock); !condition {
+			return false, errors.New("previous Block isn't valid")
+		}
+		switch true {
+		// Previous block exists in the blockchain. It is assumed it is valid
+		case oldBlock.Hash != pBlockchain.Blocks[len(pBlockchain.Blocks)-1].Hash:
+			return false, errors.New("oldBlock's hash doesn't seem to match the latest block in the blockchain")
+		// Timestamp
+		case !oldBlock.Timestamp.Before(newBlock.Timestamp):
+			return false, errors.New("timestamp is not valid")
+		// Previous block hash comparison
+		case oldBlock.Hash != newBlock.PrevHash:
+			return false, errors.New("hash of previous block doesn't match")
+		// Does the corresponding hash match
+		case CalculateHash(newBlock) != newBlock.Hash:
+			return false, errors.New("calculated hash doesn't match")
+		// Checking proof of work
+		case !IsHashValid(newBlock.Hash, newBlock.Difficulty):
+			return false, errors.New("the proof of work is not valid")
+		// Verifying state transition
+		case !pBlockchain.verifyStateTransition(newBlock.Transactions, pBlockchain.State):
+			return false, errors.New("the transactions are inconsistent with the state")
+		default:
+			return true, nil
+		}
+
+	} else {
 		return true, nil
 	}
 }
@@ -93,7 +110,6 @@ func (pBlockchain *Blockchain) verifyStateTransition(pTransactions []components.
 	for _, v := range pTransactions {
 		switch true {
 		// TODO: Verifying signature, doing it in the same main function?
-		// TODO: Change it so that it verifies the signature
 		// Signature of sender does not match the owner of the UTXO
 		// Transaction is well formed
 		case pBlockchain.State[v.Origin] < 0:
@@ -114,8 +130,8 @@ func (pBlockchain *Blockchain) verifyStateTransition(pTransactions []components.
 	// Update the final state
 	initialState = modifiedState
 	return true
-	// TODO: Adding a limit for number of transactions in a block?
-	// TODO: Add a function to request to add a transaction to a block
 }
 
+// TODO: Adding a limit for number of transactions in a block?
+// TODO: Add a function to request to add a transaction to a block
 // TODO: Standardize names through out the implementations

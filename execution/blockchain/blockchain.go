@@ -3,11 +3,8 @@ package main
 import (
 	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain"
 	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
-	"sync"
 	"time"
 )
-
-var mutex = &sync.Mutex{}
 
 func main() {
 
@@ -21,8 +18,7 @@ func main() {
 	// a fixed amount of currency
 	var availableCurrency = 10.0
 	t := time.Now()
-	genesisBlock := blockchain.Block{}
-	genesisBlock = blockchain.Block{Timestamp: t, Hash: blockchain.CalculateHash(genesisBlock), Transactions: make([]components.Transaction, 0), Difficulty: definedDifficulty}
+	genesisBlock := blockchain.Block{Timestamp: t, Hash: "", Transactions: make([]components.Transaction, 0), Difficulty: definedDifficulty}
 	// Validate created block
 	for i := 0; ; i++ {
 		genesisBlock.Nonce = i

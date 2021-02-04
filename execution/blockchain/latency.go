@@ -4,11 +4,8 @@ import (
 	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain"
 	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
 	"math/rand"
-	"sync"
 	"time"
 )
-
-var mutex = &sync.Mutex{}
 
 // The following code tries to perform the tests regarding the metric of latency on the blockchain data structure.
 

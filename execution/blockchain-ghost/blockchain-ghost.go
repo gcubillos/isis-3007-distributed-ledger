@@ -3,11 +3,8 @@ package main
 import (
 	ghost "github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain-ghost"
 	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
-	"sync"
 	"time"
 )
-
-var mutex = &sync.Mutex{}
 
 func main() {
 
@@ -21,19 +18,17 @@ func main() {
 	// a fixed amount of currency
 	var availableCurrency = 10.0
 	t := time.Now()
-	genesisBlock := ghost.Block{}
-	genesisBlock = ghost.Block{
+	genesisBlock := ghost.Block{
 		Timestamp:         t,
-		Hash:              ghost.CalculateHash(genesisBlock),
+		Hash:              "",
 		HashPreviousBlock: "",
 		Parent:            nil,
 		Uncles:            nil,
 		Transactions:      make([]components.Transaction, 0),
 		RecentState:       nil,
 		BlockNumber:       0,
-		Difficulty:        0,
+		Difficulty:        definedDifficulty,
 	}
-	genesisBlock = ghost.Block{Timestamp: t, Hash: ghost.CalculateHash(genesisBlock), Transactions: make([]components.Transaction, 0), Difficulty: definedDifficulty}
 	// Validate created block
 	for i := 0; ; i++ {
 		genesisBlock.Nonce = i
@@ -50,7 +45,7 @@ func main() {
 	firstNode := ghost.CreateInitialNode(genesisBlock, availableCurrency)
 
 	// Create other nodes
-	otherNode := ghost.CreateNode(firstNode.DataStructure, firstNode.Node)
+	otherNode := ghost.GenerateNode(firstNode.DataStructure, firstNode.Node)
 
 	// Create an empty transaction
 	exampleTransaction := components.Transaction{
@@ -62,6 +57,6 @@ func main() {
 	transactionList := make([]components.Transaction, 1, 1)
 	transactionList[0] = exampleTransaction
 
-	firstNode.GenerateBlock(genesisBlock, transactionList)
+	firstNode.GenerateBlock(&genesisBlock, transactionList)
 
 }

@@ -13,15 +13,12 @@ type Ghost struct {
 // *** Constructors ***
 // *** Methods ***
 
+// Finding the GHOST (Greedy Heaviest-Observed Sub-Tree)
 // Way of replacing the chain
 // Choosing the branch with the most combined proof of work, measured by the amount of
 // nodes present in such branch
-// TODO: Finish replace chain algorithm
-
-// Finding the GHOST (Greedy Heaviest-Observed Sub-Tree)
 // Modified version where you start at the tip and work your way backwards to find the
 // heaviest sub tree
-// TODO: Finish finding GHOST
 func (pGhost *Ghost) FindGHOST(pNewBlockchain Ghost) {
 	var forkBlock Block
 	var diverges = false

@@ -41,27 +41,32 @@ type Block struct {
 // Return true, and register S[n] as the state at the end of this Block.
 
 func (pGhost *Ghost) IsBlockValid(pBlock Block) (bool, error) {
-	// Previous Block exists and valid
-	if condition, _ := pGhost.IsBlockValid(*pBlock.Parent); !condition {
-		return false, errors.New("previous Block isn't valid")
-	}
-	switch true {
-	// Timestamp
-	case pBlock.Timestamp.Before(pBlock.Parent.Timestamp):
-		return false, errors.New("timestamp of previous Block isn't valid")
-	// Previous block hash comparison
-	case pBlock.HashPreviousBlock != CalculateHash(pBlock):
-		return false, errors.New("hash of previous block doesn't match")
-	// Checking that the current hash is valid
-	case pBlock.Hash != CalculateHash(pBlock):
-		return false, errors.New("current block hash is not valid")
-	// Validating proof of work
-	case !IsHashValid(pBlock.Hash, pBlock.Difficulty):
-		return false, errors.New("Proof of work is not valid")
-	// State transition check
-	case !verifyStateTransition(pBlock):
-		return false, errors.New("the transactions are inconsistent with the state")
-	default:
+	// Checking that it is valid until you reach the genesis block
+	if pBlock.HashPreviousBlock != "" {
+		// Previous Block exists and valid
+		if condition, _ := pGhost.IsBlockValid(*pBlock.Parent); !condition {
+			return false, errors.New("previous Block isn't valid")
+		}
+		switch true {
+		// Timestamp
+		case pBlock.Timestamp.Before(pBlock.Parent.Timestamp):
+			return false, errors.New("timestamp of previous Block isn't valid")
+		// Previous block hash comparison
+		case pBlock.HashPreviousBlock != CalculateHash(pBlock):
+			return false, errors.New("hash of previous block doesn't match")
+		// Checking that the current hash is valid
+		case pBlock.Hash != CalculateHash(pBlock):
+			return false, errors.New("current block hash is not valid")
+		// Validating proof of work
+		case !IsHashValid(pBlock.Hash, pBlock.Difficulty):
+			return false, errors.New("proof of work is not valid")
+		// State transition check
+		case !verifyStateTransition(pBlock):
+			return false, errors.New("the transactions are inconsistent with the state")
+		default:
+			return true, nil
+		}
+	} else {
 		return true, nil
 	}
 }
