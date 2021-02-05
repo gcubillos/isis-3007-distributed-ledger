@@ -25,10 +25,16 @@ func main() {
 		Parent:            nil,
 		Uncles:            nil,
 		Transactions:      make([]components.Transaction, 0),
-		RecentState:       nil,
+		RecentState:       make(map[string]*ghost.Account, 0),
 		BlockNumber:       0,
 		Difficulty:        definedDifficulty,
 	}
+
+	// For simplicity a "main" account will be created that contains the amount of currency available
+	mainAccount := ghost.CreateAccount("main")
+	mainAccount.Balance = availableCurrency
+	genesisBlock.RecentState[mainAccount.Address] = &mainAccount
+
 	// Validate created block
 	for i := 0; ; i++ {
 		genesisBlock.Nonce = i

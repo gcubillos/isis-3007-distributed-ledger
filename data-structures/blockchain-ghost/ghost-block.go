@@ -52,7 +52,7 @@ func (pGhost *Ghost) IsBlockValid(pBlock Block) (bool, error) {
 		case pBlock.Timestamp.Before(pBlock.Parent.Timestamp):
 			return false, errors.New("timestamp of previous Block isn't valid")
 		// Previous block hash comparison
-		case pBlock.HashPreviousBlock != CalculateHash(pBlock):
+		case pBlock.HashPreviousBlock != CalculateHash(*pBlock.Parent):
 			return false, errors.New("hash of previous block doesn't match")
 		// Checking that the current hash is valid
 		case pBlock.Hash != CalculateHash(pBlock):
@@ -94,6 +94,11 @@ func verifyStateTransition(pBlock Block) bool {
 	var modifiedState = pBlock.Parent.RecentState
 	// Go through the lists of transactions
 	for _, v := range pBlock.Transactions {
+		// Create if necessary an account for the sender
+		if _, ok := modifiedState[v.Origin]; !ok {
+			senderAccount := CreateAccount(v.Origin)
+			modifiedState[v.Origin] = &senderAccount
+		}
 		switch true {
 		// Checking transaction is valid and well formed
 		case v.Value < 0:

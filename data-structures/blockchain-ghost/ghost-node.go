@@ -50,8 +50,8 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 		}
 
 		receivedGhost := Ghost{
-			Blocks: make([]Block, 0),
-			State:  make(map[string]*Account, 0),
+			Blocks:       make([]Block, 0),
+			CurrentChain: make([]Block, 0),
 		}
 		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err != nil {
 			fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedGhost.Blocks)
@@ -84,17 +84,12 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhost {
 	// Create structure
 	thisNode = NodeGhost{
-		DataStructure: Ghost{[]Block{pGenesisBlock}, make(map[string]*Account, 0), []Block{pGenesisBlock}},
+		DataStructure: Ghost{[]Block{pGenesisBlock}, []Block{pGenesisBlock}},
 		Node:          nil,
 	}
 	// Create network node
 	networkNode, err := noise.NewNode()
 	check(err)
-
-	// For simplicity a "main" account will be created that contains the amount of currency available
-	mainAccount := CreateAccount(networkNode.Addr())
-	mainAccount.Balance = pAvailableCurrency
-	thisNode.DataStructure.State[networkNode.Addr()] = &mainAccount
 
 	// Assign the Kademlia protocol to the node so it can discover other nodes
 	ka := kademlia.New()
@@ -107,8 +102,8 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhos
 		}
 
 		receivedGhost := Ghost{
-			Blocks: make([]Block, 0),
-			State:  make(map[string]*Account, 0),
+			Blocks:       make([]Block, 0),
+			CurrentChain: make([]Block, 0),
 		}
 		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method
 		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err != nil {
@@ -123,8 +118,6 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhos
 
 	// Make the node listen to the network
 	check(networkNode.Listen())
-
-	// TODO: Modify the time the address is being put to the state so that the nodes can communicate
 
 	// Assign the network node to the node
 	thisNode.Node = networkNode

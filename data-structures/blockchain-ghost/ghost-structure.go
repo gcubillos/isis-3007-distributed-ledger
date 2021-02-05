@@ -6,7 +6,6 @@ package ghost
 Contains Blocks and State, it also saves the children and unused nodes */
 type Ghost struct {
 	Blocks       []Block
-	State        map[string]*Account
 	CurrentChain []Block
 }
 
@@ -37,7 +36,6 @@ func (pGhost *Ghost) FindGHOST(pNewBlockchain Ghost) {
 	if newChainSize > currentChainSize {
 		pGhost.Blocks = pNewBlockchain.Blocks
 		pGhost.CurrentChain = pNewBlockchain.CurrentChain
-		pGhost.State = pNewBlockchain.State
 	}
 }
 
