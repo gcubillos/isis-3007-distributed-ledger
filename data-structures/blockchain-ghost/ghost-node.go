@@ -81,7 +81,7 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 // Create the initial node
 // The genesis block is passed to the Node
 // The amount of available currency is passed to the node
-func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhost {
+func CreateInitialNode(pGenesisBlock Block) NodeGhost {
 	// Create structure
 	thisNode = NodeGhost{
 		DataStructure: Ghost{[]Block{pGenesisBlock}, []Block{pGenesisBlock}},
@@ -111,7 +111,11 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeGhos
 		} else {
 			thisNode.DataStructure.FindGHOST(receivedGhost)
 		}
-		fmt.Printf("current structure InitialNode %v \n", thisNode.DataStructure)
+		fmt.Printf("current structure InitialNode \n")
+		for _, v := range thisNode.DataStructure.Blocks {
+			fmt.Printf("a block %v \n", v)
+
+		}
 
 		return nil
 	})
@@ -162,7 +166,7 @@ func (pNode *NodeGhost) GenerateBlock(pParent *Block, pTransactions []components
 	}
 
 	// Check that the block is valid
-	if ok, err := thisNode.DataStructure.IsBlockValid(nBlock); ok {
+	if ok, err := thisNode.DataStructure.IsBlockValid(&nBlock); ok {
 		check(err)
 		// Add the block to the current structure
 		mutex.Lock()

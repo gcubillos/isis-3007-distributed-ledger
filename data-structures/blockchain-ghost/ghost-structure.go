@@ -22,16 +22,26 @@ func (pGhost *Ghost) FindGHOST(pNewBlockchain Ghost) {
 	var forkBlock Block
 	var diverges = false
 	// Find the place the fork occurs and history diverges
-	for i := 0; !diverges; i++ {
+	for i := 0; !diverges && i < len(pGhost.CurrentChain); i++ {
 		if pGhost.CurrentChain[i].Hash != pNewBlockchain.CurrentChain[i].Hash {
 			forkBlock = *pGhost.CurrentChain[i].Parent
 			diverges = true
 		}
 	}
 
-	// Subtree size of the new chain
-	newChainSize := findSubTreeSize(pNewBlockchain, forkBlock)
-	currentChainSize := findSubTreeSize(*pGhost, forkBlock)
+	var newChainSize int
+	var currentChainSize int
+	// Check whether the fork block was found
+	if diverges {
+		// Subtree size of the new chain
+		newChainSize = findSubTreeSize(pNewBlockchain, forkBlock)
+		currentChainSize = findSubTreeSize(*pGhost, forkBlock)
+	} else {
+		// Just get the chain with the greatest length
+		newChainSize = len(pNewBlockchain.Blocks)
+		currentChainSize = len(pGhost.Blocks)
+
+	}
 
 	if newChainSize > currentChainSize {
 		pGhost.Blocks = pNewBlockchain.Blocks

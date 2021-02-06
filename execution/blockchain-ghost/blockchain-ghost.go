@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// Create the first node in the network to have as a starting point
-	firstNode := ghost.CreateInitialNode(genesisBlock, availableCurrency)
+	firstNode := ghost.CreateInitialNode(genesisBlock)
 
 	// Create other nodes
 	otherNode := ghost.GenerateNode(firstNode.DataStructure, firstNode.Node)

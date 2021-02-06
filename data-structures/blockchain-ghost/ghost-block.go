@@ -40,11 +40,11 @@ type Block struct {
 // set S[i+1] = APPLY(S[i],TX[i]) If any application returns an error, exit and return false.
 // Return true, and register S[n] as the state at the end of this Block.
 
-func (pGhost *Ghost) IsBlockValid(pBlock Block) (bool, error) {
+func (pGhost *Ghost) IsBlockValid(pBlock *Block) (bool, error) {
 	// Checking that it is valid until you reach the genesis block
 	if pBlock.HashPreviousBlock != "" {
 		// Previous Block exists and valid
-		if condition, _ := pGhost.IsBlockValid(*pBlock.Parent); !condition {
+		if condition, _ := pGhost.IsBlockValid(pBlock.Parent); !condition {
 			return false, errors.New("previous Block isn't valid")
 		}
 		switch true {
@@ -55,7 +55,7 @@ func (pGhost *Ghost) IsBlockValid(pBlock Block) (bool, error) {
 		case pBlock.HashPreviousBlock != CalculateHash(*pBlock.Parent):
 			return false, errors.New("hash of previous block doesn't match")
 		// Checking that the current hash is valid
-		case pBlock.Hash != CalculateHash(pBlock):
+		case pBlock.Hash != CalculateHash(*pBlock):
 			return false, errors.New("current block hash is not valid")
 		// Validating proof of work
 		case !IsHashValid(pBlock.Hash, pBlock.Difficulty):
@@ -88,7 +88,7 @@ func IsHashValid(hash string, difficulty int) bool {
 }
 
 // Receives a state and then performs the transactions and returns the modified state when it is valid
-func verifyStateTransition(pBlock Block) bool {
+func verifyStateTransition(pBlock *Block) bool {
 	// TODO: Checking validity of accounts
 	// Initialize state
 	var modifiedState = pBlock.Parent.RecentState
