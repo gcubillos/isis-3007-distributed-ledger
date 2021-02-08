@@ -8,3 +8,12 @@ type Transaction struct {
 	Destination     string
 	Value           float64
 }
+
+func CreateTransaction(pOrigin, pSignature, pDestination string, pValue float64) Transaction {
+	return Transaction{
+		Origin:          pOrigin,
+		SenderSignature: pSignature,
+		Destination:     pDestination,
+		Value:           pValue,
+	}
+}

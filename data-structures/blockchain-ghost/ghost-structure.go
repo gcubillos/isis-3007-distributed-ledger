@@ -20,7 +20,7 @@ type Ghost struct {
 // heaviest sub tree
 func (pGhost *Ghost) FindGHOST(pNewBlockchain Ghost) {
 	var forkBlock Block
-	var diverges = false
+	diverges := false
 	// Find the place the fork occurs and history diverges
 	for i := 0; !diverges && i < len(pGhost.CurrentChain); i++ {
 		if pGhost.CurrentChain[i].Hash != pNewBlockchain.CurrentChain[i].Hash {

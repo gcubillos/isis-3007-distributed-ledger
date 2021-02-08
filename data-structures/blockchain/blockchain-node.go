@@ -50,14 +50,19 @@ func CreateNode(pCurrentBlockchain Blockchain, pNode *noise.Node) NodeBlockchain
 			Blocks: make([]Block, 0),
 			State:  make(map[string]float64, 0),
 		}
-		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err != nil {
-			fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain.Blocks)
-		} else {
+		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method.
+		// Just change the context received. Uncomment to view the error
+		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err == nil {
 			thisNode.DataStructure.ReplaceChain(receivedBlockchain)
+			fmt.Printf("current structure Create Node \n")
+			for _, v := range thisNode.DataStructure.Blocks {
+				fmt.Printf("a block %v \n", v)
+			}
+		} else {
+			// fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain.Blocks)
 		}
-		fmt.Printf("current structure CreateNode %v \n", thisNode.DataStructure)
 
-		return nil
+		return ctx.Send([]byte(""))
 	})
 
 	// Make the node listen to the network
@@ -104,15 +109,19 @@ func CreateInitialNode(pGenesisBlock Block, pAvailableCurrency float64) NodeBloc
 			Blocks: make([]Block, 0),
 			State:  make(map[string]float64, 0),
 		}
-		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method
-		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err != nil {
-			fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain)
-		} else {
+		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method.
+		// Just change the context received. Uncomment to view the error
+		if err := json.Unmarshal(ctx.Data(), &receivedBlockchain); err == nil {
 			thisNode.DataStructure.ReplaceChain(receivedBlockchain)
+			fmt.Printf("current structure InitialNode \n")
+			for _, v := range thisNode.DataStructure.Blocks {
+				fmt.Printf("a block %v \n", v)
+			}
+		} else {
+			// fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedBlockchain.Blocks)
 		}
-		fmt.Printf("current structure InitialNode %v \n", thisNode.DataStructure)
 
-		return nil
+		return ctx.Send([]byte(""))
 	})
 
 	// Make the node listen to the network

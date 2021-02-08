@@ -43,6 +43,8 @@ func CalculateHash(block Block) string {
 }
 
 // Function that checks whether a block is valid
+// TODO: Receives a boolean parameter that indicates whether it is a new block or not.
+// This is done as a way to reverse the state and checking it
 func (pBlockchain *Blockchain) IsBlockValid(newBlock, oldBlock Block) (bool, error) {
 	// Validating previous blocks until the genesis block is reached
 	if oldBlock.PrevHash != "" {
@@ -93,17 +95,27 @@ func IsHashValid(hash string, difficulty int) bool {
 	return strings.HasPrefix(hash, prefix)
 }
 
-// TODO: Change consensus algorithm? When it is being changed verify that the new chain is valid
 // that is that the transitions in the state are valid
-// TODO: Verify the forks so that it behaves similarly than the ghost protocol
 func (pBlockchain *Blockchain) ReplaceChain(newBlockchain Blockchain) {
-	if len(newBlockchain.Blocks) > len(pBlockchain.Blocks) {
-		pBlockchain.Blocks = newBlockchain.Blocks
-		pBlockchain.State = newBlockchain.State
+	var forkBlock Block
+	diverges := false
+	// Find the place the fork occurs and history diverges
+	for i := 0; !diverges && i < len(pBlockchain.Blocks); i++ {
+		if pBlockchain.Blocks[i].Hash != newBlockchain.Blocks[i].Hash {
+			forkBlock = pBlockchain.Blocks[i-1]
+			diverges = true
+		}
+	}
+	if forkBlock.Hash != pBlockchain.Blocks[0].Hash {
+		lenNewBlockchain := len(newBlockchain.Blocks)
+		// Verify length and validity of blocks in the received chain
+		if ok, _ := newBlockchain.IsBlockValid(newBlockchain.Blocks[lenNewBlockchain-1], newBlockchain.Blocks[lenNewBlockchain-2]); lenNewBlockchain > len(pBlockchain.Blocks) && ok {
+			pBlockchain.Blocks = newBlockchain.Blocks
+			pBlockchain.State = newBlockchain.State
+		}
 	}
 }
 
-// TODO: Manage concurrency
 // Receives a state and then performs the transactions and returns the modified state when it is valid
 func (pBlockchain *Blockchain) verifyStateTransition(pTransactions []components.Transaction, initialState map[string]float64) bool {
 	modifiedState := initialState

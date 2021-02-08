@@ -46,21 +46,27 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 	// Assign the way the node will handle the requests for updates in the chain
 	networkNode.Handle(func(ctx noise.HandlerContext) error {
 		if !ctx.IsRequest() {
-			return nil
+			return ctx.Send([]byte(""))
 		}
 
 		receivedGhost := Ghost{
 			Blocks:       make([]Block, 0),
 			CurrentChain: make([]Block, 0),
 		}
-		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err != nil {
-			fmt.Printf("trouble unmarshalling CreateNode. Error: %v Blockchain: %v \n", err.Error(), receivedGhost.Blocks)
-		} else {
+		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method.
+		// Just change the context received. Uncomment to view the error
+		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err == nil {
 			thisNode.DataStructure.FindGHOST(receivedGhost)
-		}
-		fmt.Printf("current structure CreateNode %v \n", thisNode.DataStructure)
+			fmt.Printf("current structure Create Node \n")
+			for _, v := range thisNode.DataStructure.Blocks {
+				fmt.Printf("a block %v \n", v)
 
-		return nil
+			}
+		} else {
+			// fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err, receivedGhost)
+		}
+
+		return ctx.Send([]byte(""))
 	})
 
 	// Make the node listen to the network
@@ -98,26 +104,27 @@ func CreateInitialNode(pGenesisBlock Block) NodeGhost {
 	// Assign the way the node will handle the requests for updates in the chain
 	networkNode.Handle(func(ctx noise.HandlerContext) error {
 		if !ctx.IsRequest() {
-			return nil
+			return ctx.Send([]byte(""))
 		}
 
 		receivedGhost := Ghost{
 			Blocks:       make([]Block, 0),
 			CurrentChain: make([]Block, 0),
 		}
-		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method
-		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err != nil {
-			fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err.Error(), receivedGhost)
-		} else {
+		// TODO: Avoid having the unmarshal error when discovering peers. Check the kademlia discover method.
+		// Just change the context received. Uncomment to view the error
+		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err == nil {
 			thisNode.DataStructure.FindGHOST(receivedGhost)
-		}
-		fmt.Printf("current structure InitialNode \n")
-		for _, v := range thisNode.DataStructure.Blocks {
-			fmt.Printf("a block %v \n", v)
+			fmt.Printf("current structure InitialNode \n")
+			for _, v := range thisNode.DataStructure.Blocks {
+				fmt.Printf("a block %v \n", v)
 
+			}
+		} else {
+			// fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err, receivedGhost)
 		}
 
-		return nil
+		return ctx.Send([]byte(""))
 	})
 
 	// Make the node listen to the network
@@ -138,12 +145,7 @@ func (pNode *NodeGhost) GenerateBlock(pParent *Block, pTransactions []components
 
 	// Adding the transaction that gives the "miner" a reward for doing the work
 	// TODO: Revise the rewards whether it is belonging to the main chain or not
-	rewardTransaction := components.Transaction{
-		Origin:          "main",
-		SenderSignature: "main",
-		Destination:     pNode.Node.Addr(),
-		Value:           1,
-	}
+	rewardTransaction := components.CreateTransaction("main", "main", pNode.Node.Addr(), 1)
 	pTransactions = append(pTransactions, rewardTransaction)
 
 	// Basic information in the block

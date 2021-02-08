@@ -18,6 +18,7 @@ func main() {
 	// a fixed amount of currency
 	var availableCurrency = 10.0
 	t := time.Now()
+	// TODO: Constructor for genesis blocks
 	genesisBlock := blockchain.Block{Timestamp: t, Hash: "", Transactions: make([]components.Transaction, 0), Difficulty: definedDifficulty}
 	// Validate created block
 	for i := 0; ; i++ {

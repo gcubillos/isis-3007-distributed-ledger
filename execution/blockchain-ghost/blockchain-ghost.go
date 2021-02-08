@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	ghost "github.com/gcubillos/isis-3007-distributed-ledger/data-structures/blockchain-ghost"
 	"github.com/gcubillos/isis-3007-distributed-ledger/data-structures/shared-components"
 	"time"
@@ -18,6 +19,7 @@ func main() {
 	// a fixed amount of currency
 	var availableCurrency = 10.0
 	t := time.Now()
+	// TODO: Constructor for genesis blocks
 	genesisBlock := ghost.Block{
 		Timestamp:         t,
 		Hash:              "",
@@ -54,15 +56,29 @@ func main() {
 	otherNode := ghost.GenerateNode(firstNode.DataStructure, firstNode.Node)
 
 	// Create an empty transaction
-	exampleTransaction := components.Transaction{
-		Origin:          firstNode.Node.Addr(),
-		SenderSignature: firstNode.Node.Addr(),
-		Destination:     otherNode.Node.Addr(),
-		Value:           0,
-	}
+	exampleTransaction := components.CreateTransaction(firstNode.Node.Addr(), firstNode.Node.Addr(), otherNode.Node.Addr(), 0)
+
 	transactionList := make([]components.Transaction, 1, 1)
 	transactionList[0] = exampleTransaction
 
-	firstNode.GenerateBlock(&genesisBlock, transactionList)
+	theFirstBlock := firstNode.GenerateBlock(&genesisBlock, transactionList)
+
+	fmt.Printf("\n %v", theFirstBlock.Hash)
+
+	firstNode.GenerateBlock(&theFirstBlock, transactionList)
+
+	// Latency: Time it takes for the transaction to be accepted by the other nodes
+	//One node submits transactions to the network and, for each transaction, the receiving
+	// node(s) subtract the initiation timestamp from the completion timestamp. The median and standard deviation are reported.
+	//	For the block-lattice:
+	// The initiation timestamp is taken when the send block (S) is created.
+	// The completion timestamp is taken after the receive block (R) is confirmed.
+	//
+	// The latency may vary depending on the size of the data structure. For this reason, it is measured for different transactions as each data structure continues to grow.
+
+	// Throughput: To measure throughput: one node submits as many transactions as it
+	// can for one second.
+	// Each throughput experiment is repeated five times and the median and standard
+	// deviation for the five runs are reported.
 
 }
