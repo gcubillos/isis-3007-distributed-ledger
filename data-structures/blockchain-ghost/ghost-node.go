@@ -63,7 +63,7 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 
 			}
 		} else {
-			// fmt.Printf("trouble unmarshalling InitialNode. Error: %v Blockchain: %v \n", err, receivedGhost)
+			// fmt.Printf("trouble unmarshalling Create Node. Error: %v Blockchain: %v \n", err, receivedGhost)
 		}
 
 		return ctx.Send([]byte(""))
@@ -115,6 +115,7 @@ func CreateInitialNode(pGenesisBlock Block) NodeGhost {
 		// Just change the context received. Uncomment to view the error
 		if err := json.Unmarshal(ctx.Data(), &receivedGhost); err == nil {
 			thisNode.DataStructure.FindGHOST(receivedGhost)
+			// TODO: Pretty printing the results using a JSON format
 			fmt.Printf("current structure InitialNode \n")
 			for _, v := range thisNode.DataStructure.Blocks {
 				fmt.Printf("a block %v \n", v)
@@ -183,8 +184,6 @@ func (pNode *NodeGhost) GenerateBlock(pParent *Block, pTransactions []components
 			_, err = thisNode.Node.Request(context.TODO(), v.ID().Address, bytes)
 			check(err)
 		}
-	} else {
-
 	}
 
 	return nBlock

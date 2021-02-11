@@ -52,8 +52,12 @@ func main() {
 	// Create the first node in the network to have as a starting point
 	firstNode := ghost.CreateInitialNode(genesisBlock)
 
+	fmt.Printf("Address first node %v", firstNode.Node.Addr())
+
 	// Create other nodes
 	otherNode := ghost.GenerateNode(firstNode.DataStructure, firstNode.Node)
+
+	fmt.Printf("Address other node %v", otherNode.Node.Addr())
 
 	// Create an empty transaction
 	exampleTransaction := components.CreateTransaction(firstNode.Node.Addr(), firstNode.Node.Addr(), otherNode.Node.Addr(), 0)
@@ -63,9 +67,10 @@ func main() {
 
 	theFirstBlock := firstNode.GenerateBlock(&genesisBlock, transactionList)
 
-	fmt.Printf("\n %v", theFirstBlock.Hash)
+	secondBlock := firstNode.GenerateBlock(&theFirstBlock, transactionList)
 
-	firstNode.GenerateBlock(&theFirstBlock, transactionList)
+	otherNode.GenerateBlock(&secondBlock, transactionList)
+	// TODO: Check the order of the transactions and why is it being printed in current structure Initial Node
 
 	// Latency: Time it takes for the transaction to be accepted by the other nodes
 	//One node submits transactions to the network and, for each transaction, the receiving
