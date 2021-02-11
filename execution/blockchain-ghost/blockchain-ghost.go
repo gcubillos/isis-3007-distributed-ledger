@@ -65,11 +65,11 @@ func main() {
 	transactionList := make([]components.Transaction, 1, 1)
 	transactionList[0] = exampleTransaction
 
-	theFirstBlock := firstNode.GenerateBlock(&genesisBlock, transactionList)
+	theFirstBlock := ghost.GenerateBlock(firstNode,&genesisBlock, transactionList)
 
-	secondBlock := firstNode.GenerateBlock(&theFirstBlock, transactionList)
+	secondBlock := ghost.GenerateBlock(firstNode,&theFirstBlock, transactionList)
 
-	otherNode.GenerateBlock(&secondBlock, transactionList)
+	ghost.GenerateBlock(firstNode,&secondBlock, transactionList)
 	// TODO: Check the order of the transactions and why is it being printed in current structure Initial Node
 
 	// Latency: Time it takes for the transaction to be accepted by the other nodes
