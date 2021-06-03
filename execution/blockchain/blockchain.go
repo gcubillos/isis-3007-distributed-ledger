@@ -48,6 +48,6 @@ func main() {
 	transactionList := make([]components.Transaction, 1, 1)
 	transactionList[0] = exampleTransaction
 
-	firstNode.GenerateBlock(genesisBlock, transactionList)
+	otherNode.GenerateBlock(genesisBlock, transactionList)
 
 }
