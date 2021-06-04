@@ -21,17 +21,14 @@ type NodeGhost struct {
 	Node          *noise.Node
 }
 
-// An instance of the ghost node
-var thisNode NodeGhost
-
 // *** Constructors ***
 
 // Create a node in the network such that it can discover other nodes using the Kademlia
 // protocol. The current state of the blockchain is passed to the Node and a first peer
 // to connect to the network
-func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
+func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) *NodeGhost {
 	// Create structure
-	thisNode = NodeGhost{
+	thisNode := NodeGhost{
 		DataStructure: pCurrentGhost,
 		Node:          nil,
 	}
@@ -81,15 +78,15 @@ func GenerateNode(pCurrentGhost Ghost, pNode *noise.Node) NodeGhost {
 	// Assign the network node to the node
 	thisNode.Node = networkNode
 
-	return thisNode
+	return &thisNode
 }
 
 // Create the initial node
 // The genesis block is passed to the Node
 // The amount of available currency is passed to the node
-func CreateInitialNode(pGenesisBlock Block) NodeGhost {
+func CreateInitialNode(pGenesisBlock Block) *NodeGhost {
 	// Create structure
-	thisNode = NodeGhost{
+	thisNode := NodeGhost{
 		DataStructure: Ghost{[]Block{pGenesisBlock}, []Block{pGenesisBlock}},
 		Node:          nil,
 	}
@@ -134,13 +131,13 @@ func CreateInitialNode(pGenesisBlock Block) NodeGhost {
 	// Assign the network node to the node
 	thisNode.Node = networkNode
 
-	return thisNode
+	return &thisNode
 }
 
 // *** Methods ***
 
 // Creating a standard Block in the network and broadcasting it
-func (pNode *NodeGhost) GenerateBlock(pParent *Block, pTransactions []components.Transaction) Block {
+func GenerateBlock(pNode *NodeGhost, pParent *Block, pTransactions []components.Transaction) Block {
 
 	var nBlock Block
 
@@ -169,19 +166,19 @@ func (pNode *NodeGhost) GenerateBlock(pParent *Block, pTransactions []components
 	}
 
 	// Check that the block is valid
-	if ok, err := thisNode.DataStructure.IsBlockValid(&nBlock); ok {
+	if ok, err := pNode.DataStructure.IsBlockValid(&nBlock); ok {
 		check(err)
 		// Add the block to the current structure
 		mutex.Lock()
-		thisNode.DataStructure.Blocks = append(thisNode.DataStructure.Blocks, nBlock)
-		thisNode.DataStructure.CurrentChain = append(thisNode.DataStructure.CurrentChain, nBlock)
+		pNode.DataStructure.Blocks = append(pNode.DataStructure.Blocks, nBlock)
+		pNode.DataStructure.CurrentChain = append(pNode.DataStructure.CurrentChain, nBlock)
 		mutex.Unlock()
 		// Convert the chain so that it can be broadcast
-		bytes, err := json.Marshal(thisNode.DataStructure)
+		bytes, err := json.Marshal(pNode.DataStructure)
 		check(err)
 		// Broadcast the chain to the network
-		for _, v := range thisNode.Node.Outbound() {
-			_, err = thisNode.Node.Request(context.TODO(), v.ID().Address, bytes)
+		for _, v := range pNode.Node.Outbound() {
+			_, err = pNode.Node.Request(context.TODO(), v.ID().Address, bytes)
 			check(err)
 		}
 	}
